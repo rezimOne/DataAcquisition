@@ -41,7 +41,8 @@ public sealed class MTConnectSynchronizer(
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            // Host is stopping.
+            // Host is stopping: a normal end of the loop, not an error.
+            logger.LogDebug("MTConnect synchronization stopped.");
         }
     }
 

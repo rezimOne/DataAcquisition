@@ -10,6 +10,7 @@ Wszystkie planowane, trwające i zakończone prace rozwojowe są ewidencjonowane
 |---|---|---|---|---|---|---|
 | [DA-001](../tematy/DA-001-api-odbioru-danych/intent.md) | verified | P2 | M | API odbioru danych z maszyn | nog_programista2 | - |
 | [DA-002](../tematy/DA-002-klient-mtconnect/intent.md) | verified | P2 | M | Klient MTConnect w workerze | nog_programista2 | - |
+| [DA-003](../tematy/DA-003-porzadki-slopwatch/intent.md) | ready | P3 | S | Porzadki po slopwatch (SW003, SW004) | nog_programista2 | - |
 
 ---
 
