@@ -50,7 +50,8 @@ public sealed class MTConnectSynchronizerTests
         var batch = Assert.Single(_sink.Batches);
         Assert.Equal((Device, InstanceA, ObservationSource.Current), (batch.DeviceName, batch.InstanceId, batch.Source));
         Assert.Equal([1L, 2L, 3L], _sink.Sequences);
-        Assert.Equal(Poll, delay);
+        // Sample right after synchronizing: after a resync the buffered data may be about to leave the agent buffer.
+        Assert.Equal(TimeSpan.Zero, delay);
     }
 
     [Fact]
@@ -73,7 +74,7 @@ public sealed class MTConnectSynchronizerTests
         Assert.Equal([1L, 2L, 3L, 4L, 5L, 6L], _sink.Sequences);
         Assert.Equal(3, _sink.Batches.Count);
         Assert.All(_sink.Batches.Skip(1), b => Assert.Equal(ObservationSource.Sample, b.Source));
-        Assert.All(delays, d => Assert.Equal(Poll, d));
+        Assert.Equal([TimeSpan.Zero, Poll, Poll, Poll], delays);
     }
 
     [Fact]
@@ -193,6 +194,26 @@ public sealed class MTConnectSynchronizerTests
     }
 
     [Fact]
+    public async Task StepAsync_OutOfRangeWithSmallFullBuffer_KeepsMarginWithinBuffer()
+    {
+        // Found in the manual run with --buffer 1000: a SampleCount (1000) margin equal to the whole buffer
+        // jumped straight to nextSequence. Margin is capped at a tenth of the buffer.
+        await SyncAsync();
+        var smallFullBuffer = new StreamsHeader(InstanceA, NextSequence: 3_000, FirstSequence: 2_000, LastSequence: 2_999, BufferSize: 1_000);
+        _agent.SampleThrows(new MTConnectAgentErrorException(MTConnectAgentErrorException.OutOfRange, "'from' outside buffer"))
+            .Current(new StreamsDocument(smallFullBuffer, [Observation(2_999)]))
+            .Sample(Streams(InstanceA, 2_102, 2_999, 2_100, 2_101));
+
+        var resyncDelay = await Step();
+        await Step();
+
+        Assert.Equal(TimeSpan.Zero, resyncDelay);
+        Assert.Equal(["sample?from=4&count=1000", "current", "sample?from=2100&count=1000"], _agent.Calls);
+        var warning = Assert.Single(Logs(LogLevel.Warning));
+        Assert.Equal(("4", "2099"), (warning.GetStructuredStateValue("LostFrom"), warning.GetStructuredStateValue("LostTo")));
+    }
+
+    [Fact]
     public async Task StepAsync_OutOfRangeWithNotFullBuffer_ResumesFromFirstSequence()
     {
         await SyncAsync();
@@ -291,7 +312,7 @@ public sealed class MTConnectSynchronizerTests
     [Fact]
     public async Task RunAsync_StoppedWhileWaiting_CompletesWithoutWarnings()
     {
-        _agent.Probe(Devices()).Current(Streams(InstanceA, 4, 3, 3));
+        _agent.Probe(Devices()).Current(Streams(InstanceA, 4, 3, 3)).Sample(Streams(InstanceA, 4, 3));
         var timeProvider = new TimerCountingTimeProvider();
         var synchronizer = new MTConnectSynchronizer(_agent, _sink, Options.Create(new MTConnectOptions()), timeProvider, _logger);
         using var stopping = new CancellationTokenSource();

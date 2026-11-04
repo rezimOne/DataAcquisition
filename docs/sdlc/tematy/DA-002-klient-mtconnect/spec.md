@@ -14,8 +14,9 @@ Worker ma dwa stany: **Niezsynchronizowany** i **Strumień** (`instanceId`, `nex
    2. `GET /current` → migawka ostatnich wartości. Obserwacje migawki są **przekazywane do odbiorcy** (decyzja PO), posortowane po `sequence`.
    3. Zapamiętaj `Header/@instanceId` i pozycję wznowienia → stan **Strumień**. Pozycja wznowienia (zmiana po review R-01, decyzja człowieka 2026-11-04):
       - **pierwszy start workera**: `Header/@nextSequence` (start od „teraz”);
-      - **resynchronizacja** (po `OUT_OF_RANGE` lub restarcie agenta): to, co agent ma jeszcze w buforze — `Header/@firstSequence`; gdy bufor jest pełny (`lastSequence − firstSequence + 1 ≥ bufferSize`), `min(firstSequence + SampleCount, nextSequence)`, bo pełny bufor kołowy usuwa najstarszą obserwację przy każdej nowej i start dokładnie od `firstSequence` dałby kolejne `OUT_OF_RANGE`.
+      - **resynchronizacja** (po `OUT_OF_RANGE` lub restarcie agenta): to, co agent ma jeszcze w buforze — `Header/@firstSequence`; gdy bufor jest pełny (`lastSequence − firstSequence + 1 ≥ bufferSize`), `min(firstSequence + min(SampleCount, bufferSize / 10), nextSequence)`, bo pełny bufor kołowy usuwa najstarszą obserwację przy każdej nowej i start dokładnie od `firstSequence` dałby kolejne `OUT_OF_RANGE`.
       Migawka `/current` jest przekazywana zawsze; jej obserwacje mogą się powtórzyć w `/sample` z bufora (at-least-once).
+   4. Po synchronizacji pierwsze `/sample` idzie **od razu** (bez `PollInterval`) — po resynchronizacji dane z bufora mogą zaraz z niego wypaść.
 3. **Strumień** — w pętli:
    1. `GET /sample?from=<nextSequence>&count=<SampleCount>`.
    2. `Header/@instanceId` ≠ zapamiętany → log `Information` („agent restarted”), przejście do synchronizacji **z** `/probe` (model urządzenia mógł się zmienić). Obserwacje z tej odpowiedzi nie są przekazywane (pobierze je `/current`/`/sample` nowej instancji).

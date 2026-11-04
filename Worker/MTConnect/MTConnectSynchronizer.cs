@@ -73,7 +73,7 @@ public sealed class MTConnectSynchronizer(
         if (!_synchronized)
         {
             await SynchronizeAsync(cancellationToken);
-            return _options.PollInterval;
+            return TimeSpan.Zero;
         }
 
         StreamsDocument sample;
@@ -86,7 +86,7 @@ public sealed class MTConnectSynchronizer(
             _lostFromSequence ??= _nextSequence;
             _synchronized = false;
             await SynchronizeAsync(cancellationToken);
-            return _options.PollInterval;
+            return TimeSpan.Zero;
         }
 
         if (sample.Header.InstanceId != _instanceId)
@@ -95,7 +95,7 @@ public sealed class MTConnectSynchronizer(
             _synchronized = false;
             _devices = null;
             await SynchronizeAsync(cancellationToken);
-            return _options.PollInterval;
+            return TimeSpan.Zero;
         }
 
         await DeliverAsync(sample, ObservationSource.Sample, cancellationToken);
@@ -145,11 +145,12 @@ public sealed class MTConnectSynchronizer(
 
     /// <summary>
     /// Oldest sequence worth requesting. A full buffer drops its oldest observation with every new one, so starting
-    /// exactly at FirstSequence would hit OUT_OF_RANGE again; keep a margin of one request (SampleCount).
+    /// exactly at FirstSequence would hit OUT_OF_RANGE again. The margin only has to cover the moment between
+    /// /current and the immediate /sample: SampleCount, but at most a tenth of the buffer (small agent buffers).
     /// </summary>
     private long ResumeSequence(StreamsHeader header) =>
         header.IsBufferFull
-            ? Math.Min(header.FirstSequence + _options.SampleCount, header.NextSequence)
+            ? Math.Min(header.FirstSequence + Math.Min(_options.SampleCount, header.BufferSize / 10), header.NextSequence)
             : header.FirstSequence;
 
     private async Task<DevicesDocument> ProbeAsync(CancellationToken cancellationToken)
