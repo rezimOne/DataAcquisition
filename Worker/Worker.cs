@@ -1,17 +1,10 @@
+using DataAcquisition.Worker.MTConnect;
+
 namespace DataAcquisition.Worker
 {
-    public class Worker(ILogger<Worker> logger, TimeProvider timeProvider) : BackgroundService
+    /// <summary>Runs MTConnect synchronization until the host stops.</summary>
+    public class Worker(MTConnectSynchronizer synchronizer) : BackgroundService
     {
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("Worker running at: {time}", timeProvider.GetLocalNow());
-                }
-                await Task.Delay(TimeSpan.FromSeconds(1), timeProvider, stoppingToken);
-            }
-        }
+        protected override Task ExecuteAsync(CancellationToken stoppingToken) => synchronizer.RunAsync(stoppingToken);
     }
 }

@@ -62,4 +62,8 @@ Wymagania: .NET SDK 10, Python 3.9+ (symulator — tylko kroki 1 i AC-08). Bez s
 ## Zgoda na zakres i odstępstwa
 
 - **Akceptacja planu**: zaakceptowano — nog_programista2, 2026-11-04.
-- **Odstępstwa**: <zmiany planu w trakcie implementacji wraz z uzasadnieniem; aktualizuj w tym samym commicie co kod, którego dotyczą>.
+- **Odstępstwa**:
+  1. **Named client zamiast typed client** (krok 4, spec *Dostęp i interfejsy*): `MTConnectClient` tworzy klienta przez `IHttpClientFactory.CreateClient("MTConnectAgent")` przy każdym żądaniu. Typed client wstrzyknięty do singletonu `MTConnectSynchronizer` trzymałby jeden `HttpClient`/handler przez cały czas życia procesu (brak rotacji handlerów, DNS). Konfiguracja (`BaseAddress` z końcowym `/`, `Timeout`) bez zmian. Dodatkowo `RemoveAllLoggers()` dla tego klienta — logi każdego żądania co `PollInterval` zagłuszałyby logi synchronizatora.
+  2. **`sample-empty.xml` napisany ręcznie** (krok 1): symulator produkuje ~100 obserwacji/s, więc w 20 próbach `/sample?from=<nextSequence>` nie zwrócił pustej odpowiedzi; plik odwzorowuje `streams_xml` symulatora bez obserwacji (komentarz w pliku).
+  3. **Test-first tylko dla parsera i synchronizatora** (czerwone 15/18 i 18/36 na zaślepkach); testy klienta HTTP i hosta (`MTConnectClientTests`, `WorkerTests`) napisane po implementacji klienta i rejestracji.
+  4. **Tempo danych symulatora**: zmierzone ~100 obserwacji/s (fixtures: ~388 sekwencji w ~3,7 s), więc bufor 131072 starcza na ~22 min, a nie ~17 min jak szacował spec (*Ryzyka*) — wniosek bez zmian.
