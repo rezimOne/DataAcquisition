@@ -5,7 +5,10 @@ param(
     [string]$Id = "",
 
     # Limit tur recenzenta
-    [int]$MaxTurns = 40
+    [int]$MaxTurns = 40,
+
+    # Nie commituj pr.md i review.md po review (domyślnie commit tylko tych dwóch plików)
+    [switch]$NoCommit
 )
 
 # Lokalne AI review bez otwierania sesji Claude Code (odpowiednik AI review w CI).
@@ -58,4 +61,16 @@ $color = if ($openBlocking.Count -gt 0) { 'Yellow' } else { 'Green' }
 Write-Host ""
 Write-Host "Review: $status (commit $commit). Otwarte uwagi: $($open.Count), w tym P1/P2: $($openBlocking.Count)." -ForegroundColor $color
 Write-Host "Plik: docs/sdlc/tematy/$topicName/review.md" -ForegroundColor Gray
+
+# Commit wyłącznie dokumentów review (pathspec) - bramka Test-TopicReady wymaga czystego drzewa
+$docs = @("docs/sdlc/tematy/$topicName/pr.md", "docs/sdlc/tematy/$topicName/review.md")
+$changedDocs = @(Invoke-Git (@('-C', $root, 'status', '--porcelain', '--') + $docs) | Where-Object { $_ })
+if ($NoCommit) {
+    Write-Host "Bez commita (-NoCommit) - zacommituj pr.md i review.md przed pushem." -ForegroundColor Yellow
+} elseif ($changedDocs.Count -gt 0) {
+    Invoke-Git (@('-C', $root, 'add', '--') + $docs) | Out-Null
+    Invoke-Git (@('-C', $root, 'commit', '-m', "${topicName}: review $commit ($status)", '--') + $docs) | Out-Null
+    if ($LASTEXITCODE -eq 0) { Write-Host "Zacommitowano: pr.md, review.md." -ForegroundColor Gray }
+    else { Write-Warning "Nie udało się zacommitować pr.md i review.md - zrób to ręcznie." }
+}
 exit 0

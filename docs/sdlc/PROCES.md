@@ -20,7 +20,7 @@ Każda zmiana w projekcie (nowa funkcja, refaktor, naprawa błędu) jest traktow
 ## 2. Instrukcja uruchomienia tematu
 
 1. **Utwórz temat i gałąź**:
-   `tools/New-Topic.ps1 -Id <ID> -Name <nazwa>` tworzy katalog `docs/sdlc/tematy/<ID>-<nazwa>/` (w tym `pr.md` i `review.md`), wiersz w `01-plan/BACKLOG.md` oraz **gałąź `topic/<ID>-<nazwa>`** od bieżącego commita (`-NoBranch` wyłącza). Cała praca nad tematem odbywa się na tej gałęzi — agent ma blokadę commitów na `main`/`master`.
+   `tools/New-Topic.ps1 -Id <ID> -Name <nazwa>` tworzy katalog `docs/sdlc/tematy/<ID>-<nazwa>/` (w tym `pr.md` i `review.md`), wiersz w `01-plan/BACKLOG.md` oraz **gałąź `topic/<ID>-<nazwa>`** od gałęzi bazowej (`baseBranch` w `.claude/sdlc.json`), niezależnie od tego, na jakiej gałęzi jesteś (`-NoBranch` wyłącza). Cała praca nad tematem odbywa się na tej gałęzi — agent ma blokadę commitów na `main`/`master`.
 2. **Wypełnij `intent.md`**:
    Określ problem, mierzalny cel, zakres i kryteria akceptacji (`AC-01`, `AC-02`). Product owner akceptuje lub odrzuca intencję.
 3. **Wypełnij `spec.md`**:
@@ -33,12 +33,12 @@ Każda zmiana w projekcie (nowa funkcja, refaktor, naprawa błędu) jest traktow
    `tools/New-PullRequest.ps1` odświeża w `pr.md` dane automatyczne (commity, pliki z oznaczeniem „w planie?”, AC vs wyniki z `verification.md`) i zapisuje diff dla recenzenta w `.claude/sdlc-tmp/` (poza gitem). Agent uzupełnia opis zmian dla recenzenta.
 7. **Lokalne review — `/sdlc-review <ID>`** (w sesji) **lub `tools/Invoke-Review.ps1 -Id <ID>`** (bez sesji, `claude -p`):
    Niezależny subagent `sdlc-reviewer` (świeży kontekst, bez powłoki) zapisuje `review.md`: uwagi P1/P2/P3 ze statusem, zgodność z planem, pokrycie AC, ocena dowodów i przejrzany commit. Autor nie może edytować `review.md`. Pętla: popraw uwagi → commit → review ponownie (uwagi przechodzą na `naprawiona`).
-8. **Decyzja człowieka**:
-   Po przeczytaniu `review.md` człowiek ustawia w `pr.md` `Status: approved` i wpisuje się w sekcji *Decyzja*. Uwagę, której nie zamierza poprawiać, może oznaczyć w `review.md` jako `odrzucona` z uzasadnieniem.
+8. **Decyzja człowieka** (jeden commit na gałęzi tematu):
+   Po przeczytaniu `review.md` człowiek ustawia w `pr.md` `Status: approved` i wpisuje się w sekcji *Decyzja*, w `plan.md` ustawia `Status: done` (plan przestaje autoryzować edycję plików — po merge nie otworzy ich innym tematom), a temat w `intent.md` i `BACKLOG.md` oznacza jako `verified`. Uwagę, której nie zamierza poprawiać, może oznaczyć w `review.md` jako `odrzucona` z uzasadnieniem. Commit tych dokumentów jest wymagany — bramki sprawdzają czyste drzewo.
 9. **Bramki i push — `tools/Test-TopicReady.ps1`**:
-   Raport GO/NO-GO: czyste drzewo, plan i zakres plików, `verification` i `review` aktualne dla kodu (po ich commitach zmieniły się tylko dokumenty tematu), brak otwartych P1/P2, `pr.md` approved, zielone testy (`testCommand` z `.claude/sdlc.json`). Ten sam skrypt uruchamia hook git `pre-push` przy wypychaniu gałęzi `topic/*` i blokuje push przy NO-GO. **Merge wykonuje człowiek na zdalnym repozytorium** — nigdy automatycznie.
+   Raport GO/NO-GO: czyste drzewo, plan i zakres plików, plan zamknięty (`done`), `verification` i `review` aktualne dla kodu (po ich commitach zmieniły się tylko dokumenty tematu), brak otwartych P1/P2, `pr.md` approved, zielone testy (`testCommand` z `.claude/sdlc.json`). Ten sam skrypt uruchamia hook git `pre-push` przy wypychaniu gałęzi `topic/*` i blokuje push przy NO-GO. **Merge wykonuje człowiek na zdalnym repozytorium** — nigdy automatycznie.
 10. **Wydanie i `release.md`**:
-   Release manager autoryzuje wdrożenie. Po okresie obserwacji oznacz temat jako `observed`, a następnie `closed`; plan otrzymuje status `done`.
+   Release manager autoryzuje wdrożenie i oznacza temat jako `released`. Po okresie obserwacji temat przechodzi na `observed`, a następnie `closed`.
 
 ---
 
@@ -50,12 +50,21 @@ draft → ready → in-progress → verified → released → observed → close
 ```
 Statusy wyjątkowe: `blocked` (zablokowany), `rejected` (odrzucony), `superseded` (zastąpiony innym).
 
+| Status tematu | Kiedy | Kto ustawia |
+|---|---|---|
+| `draft` | utworzenie tematu (`New-Topic.ps1`) | skrypt |
+| `ready` | akceptacja `intent.md` | product owner |
+| `in-progress` | zatwierdzenie `plan.md` (`approved`) | człowiek zatwierdzający plan (agent może zaktualizować `intent.md`/`BACKLOG.md` na jego polecenie) |
+| `verified` | akceptacja `pr.md` (krok 8) | człowiek akceptujący PR |
+| `released` | wdrożenie (`release.md`: `released`) | release manager |
+| `observed` → `closed` | koniec okresu obserwacji | właściciel usługi |
+
 **Statusy dokumentów** w katalogu tematu:
 
 | Dokument | Statusy |
 |---|---|
 | `spec.md` | `draft` → `approved` |
-| `plan.md` | `draft` → `approved` (wyłącznie człowiek) → `done` (po wydaniu; plan przestaje autoryzować edycję plików) |
+| `plan.md` | `draft` → `approved` (wyłącznie człowiek) → `done` (człowiek, przy akceptacji PR; plan przestaje autoryzować edycję plików) |
 | `verification.md` | `not-run` → `failed` / `verified` |
 | `pr.md` | `draft` → `approved` (wyłącznie człowiek, po przeczytaniu review) |
 | `review.md` | `not-run` → `changes-requested` / `no-blocking-findings` (wyłącznie recenzent `sdlc-reviewer`); uwagi: `otwarta` → `naprawiona` / `odrzucona` |
@@ -87,17 +96,25 @@ Instrukcje w `CLAUDE.md` są doradcze. Reguły krytyczne są dodatkowo egzekwowa
 | Test-first przy naprawach (`Tryb: fix`) | Ten sam hook: blokada edycji testów zacommitowanych w `HEAD` |
 | Brak sekretów w repozytorium | Ten sam hook: skan zapisywanej treści |
 | Formatowanie | Hook `PostToolUse` → `.claude/hooks/post-edit-format.ps1` + `format.json` (komenda jako lista argumentów, bez powłoki) |
-| Agent nie zmienia własnych bramek | Hook + `permissions.deny` dla `.claude/settings*.json`, `.claude/hooks/`, `.claude/agents/`, `.claude/skills/`, `.claude/sdlc.json`, `.githooks/`, `tools/` (deny obejmuje też `sed`, `tee` i przekierowania w Bash) |
+| Kod tylko według zatwierdzonego planu — co jest wolne | Bez planu: wyłącznie `docs/` i główne `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `README.md` (ta sama lista w hooku, `New-PullRequest` i `Test-TopicReady` — funkcja `Test-FreePath`). Pozostałe pliki, także w `.claude/`, muszą być w planie |
+| Agent nie zmienia własnych bramek | Hook + `permissions.deny` dla `.claude/settings*.json`, `.claude/hooks/`, `.claude/agents/`, `.claude/skills/`, `.claude/sdlc.json`, `.githooks/`, `tools/`, `.slopwatch/`, `dotnet-tools.json` (deny obejmuje też `sed`, `tee` i przekierowania w Bash) |
 | PR akceptuje człowiek | Hook edycji: blokada nadania `Status: approved` w `pr.md`, pytanie przy zmianie zatwierdzonego PR |
 | Rozdział ról autor / recenzent | Hook edycji: `review.md` zapisuje wyłącznie agent `sdlc-reviewer` (pole `agent_type`), a recenzent nie może zapisać nic innego; recenzent nie ma powłoki (diff dostaje z `.claude/sdlc-tmp/`) |
+| Skille techniczne dostępne w projekcie | Pluginy stosu w `.claude/settings.json` (`enabledPlugins` + `extraKnownMarketplaces`, wstawia `Init-SDLC.ps1 -Stack`) — Claude Code proponuje instalację po zaufaniu folderowi; bez kopii skilli w repozytorium |
+| Właściwe skille dla zmiany | Routing w `CLAUDE.md` (obszar → pliki → skille) + sekcja *Wymagane skille* w `plan.md`; recenzent ładuje je narzędziem Skill i wypisuje w `review.md` → *Zastosowane skille* |
+| Reguły ze skilli, których agent nie może sam „zaakceptować” | `.slopwatch/` tylko dla człowieka (hook + deny, w tym `slopwatch --update-baseline`); zmiana wzorca snapshotu `*.verified.*` wymaga potwierdzenia człowieka (ask); bramka *Slopwatch* w `Test-TopicReady` (aktywna, gdy istnieje `.slopwatch/baseline.json`; narzędzie lokalne z manifestu `dotnet-tools.json` (w `.config/` lub w korzeniu), przywracane automatycznie przez `dotnet tool restore`; manifest tylko dla człowieka, agent ma zakaz `dotnet tool install/update/uninstall`, `slopwatch init` i `--create/--update-baseline`; tryb ścisły `--fail-on warning`; dodanie `[SlopwatchSuppress]` wymaga potwierdzenia człowieka). Ograniczenie narzędzia (0.4.2): atrybuty z pełną nazwą, np. `[Xunit.Fact(Skip = ...)]`, nie są wykrywane — wyłapuje je recenzent |
 | Agent nie commituje na `main`/`master` | Hook `PreToolUse` Bash (`if: Bash(git *)`) → `.claude/hooks/pre-bash-guard.ps1`: blokada `commit/merge/cherry-pick/revert/am/rebase/pull` na `main`/`master` |
 | Push tylko po GO | Hook git `.githooks/pre-push` (`core.hooksPath` ustawia Init) → `tools/Test-TopicReady.ps1`; agent ma zakaz `--no-verify` i zmiany `core.hooksPath` |
 | Globalne `disableAllHooks: true` nie wyłącza bramek | `"disableAllHooks": false` w `.claude/settings.json` (projekt ma pierwszeństwo przed ustawieniami użytkownika; `settings.local.json` chroni hook) |
 | Awaria hooka nie otwiera bramki | `"onFailure": "block"` + hook kończy każdy nieoczekiwany błąd blokadą (fail-closed); wymaga Claude Code ≥ 2.1.295 |
 | Brak pushy do `main`, `--force`, `--no-verify`; każdy push wymaga potwierdzenia | `permissions.deny` / `ask` w `.claude/settings.json` |
-| Review według `REVIEW.md` | Lokalnie: `/sdlc-review` / `tools/Invoke-Review.ps1` (doradczo). Opcjonalnie w CI: `.github/workflows/claude-review.yml` (`Init-SDLC.ps1 -IncludeCI`) |
+| Review według `REVIEW.md` | Lokalnie: `/sdlc-review` / `tools/Invoke-Review.ps1` (doradczo) — źródłem prawdy dla bramek jest `review.md`. Opcjonalnie w CI: `.github/workflows/claude-review.yml` (`Init-SDLC.ps1 -IncludeCI`) — komentarze w PR na zdalnym repozytorium, dodatkowe wobec `review.md` (nie zna skilli z routingu i nie zastępuje bramek) |
 | Merge tylko po akceptacji człowieka | Ręczny merge na zdalnym repozytorium; po skonfigurowaniu zdalnego repo warto włączyć tam branch protection na `main` |
 
 **Wymagania**: Windows PowerShell (`powershell`) — na Linux/macOS potrzebny `pwsh` dostępny pod nazwą `powershell` (opcjonalny workflow `claude.yml` tworzy taki link na runnerze); hook `pre-push` wybiera `powershell` lub `pwsh` sam. Zmiany w `.claude/` wprowadza człowiek poza sesją agenta.
+
+**Skille a proces**: skille są doradczą wiedzą (jak pisać kod), a nie mechanizmem egzekucji — reguła, której złamanie jest niedopuszczalne, musi mieć hook albo warunek w `Test-TopicReady`. Instrukcje skilli nie mają pierwszeństwa przed procesem: jeśli skill każe zmienić `.claude/`, `.githooks/`, `tools/` lub baseline narzędzia, agent zgłasza to człowiekowi. Nowy skill organizacyjny (np. polityka bezpieczeństwa) dodaje człowiek do `.claude/skills/` i do routingu w `CLAUDE.md`.
+
+**Niewspierane równolegle**: plugin `devflow` (własne hooki PreToolUse/PostToolUse dublujące bramki SDLC, własny review z werdyktem APPROVE sprzeczny z zasadą „agent nie zatwierdza”, własna sekcja w `CLAUDE.md`). Nie włączaj go w projektach z tym procesem.
 
 **Ograniczenia**: bramka planu kontroluje narzędzia edycji agenta, a nie dowolne polecenia powłoki (np. skrypt, który sam zapisuje pliki) — dlatego ostateczną bramką pozostaje decyzja człowieka w `pr.md` i ręczny merge. Człowiek może świadomie pominąć hook `pre-push` (`git push --no-verify`) — to celowe i widoczne w historii zdalnego repozytorium. W organizacji reguły nienegocjowalne warto przenieść do *managed settings* (centralnie zarządzanych, nienadpisywalnych przez projekt).

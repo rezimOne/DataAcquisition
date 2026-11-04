@@ -1,8 +1,8 @@
 # Pull Request: <ID — tytuł>
 
-Status: draft. Gałąź: <gałąź>. Baza: <baza>. Autor: <osoba>. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
+Status: draft. Gałąź: <gałąź>. Gałąź bazowa: <baza>. Autor: <osoba>. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
 
-> Cykl statusu: draft → approved. Status approved nadaje wyłącznie człowiek po przeczytaniu `review.md` (hook blokuje agenta). Push gałęzi przepuszcza dopiero `tools/Test-TopicReady.ps1` (hook git pre-push). Merge wykonuje człowiek na zdalnym repozytorium.
+> Cykl statusu: draft → approved. Status approved nadaje wyłącznie człowiek po przeczytaniu `review.md` (hook blokuje agenta) — w tym samym commicie ustawia `Status: done` w `plan.md`. Push gałęzi przepuszcza dopiero `tools/Test-TopicReady.ps1` (hook git pre-push). Merge wykonuje człowiek na zdalnym repozytorium.
 
 ## Opis zmiany
 
@@ -35,5 +35,5 @@ _Uruchom `tools/New-PullRequest.ps1 -Id <ID>` lub `/sdlc-pr <ID>`._
 
 ## Decyzja
 
-- **Akceptacja do wypchnięcia**: <osoba, data — approved / changes-requested> — wpisuje człowiek po przeczytaniu `review.md`.
+- **Akceptacja do wypchnięcia**: <osoba, data — approved / changes-requested> — wpisuje człowiek po przeczytaniu `review.md`; razem z nią `plan.md` → `Status: done` (plan przestaje autoryzować edycję plików), a temat w `intent.md` / `BACKLOG.md` → `verified`.
 - **Zdalny PR / merge**: <link lub numer PR na zdalnym repozytorium, data merge — uzupełnia człowiek>.

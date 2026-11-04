@@ -18,6 +18,7 @@ param(
     [switch]$NoBranch
 )
 
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -58,9 +59,24 @@ if (-not $NoBranch) {
     } elseif ($commitSha -eq "brak-git") {
         Write-Warning "Repozytorium nie ma jeszcze żadnego commita - zrób pierwszy commit na $($config.baseBranch), potem: git switch -c $branchName"
     } else {
-        & git -C $projectRoot switch -c $branchName
+        # Gałąź tematu zawsze startuje od gałęzi bazowej - inaczej PR objąłby zmiany innego tematu
+        $base = $config.baseBranch
+        $current = ([string](Invoke-Git @('-C', $projectRoot, 'rev-parse', '--abbrev-ref', 'HEAD'))).Trim()
+        $startPoint = $base
+        if (-not (Invoke-Git @('-C', $projectRoot, 'rev-parse', '--verify', '--quiet', "$base^{commit}"))) {
+            Write-Warning "Brak gałęzi bazowej '$base' (baseBranch w .claude/sdlc.json) - gałąź tematu powstanie od bieżącego commita."
+            $startPoint = 'HEAD'
+        } elseif ($current -ne $base) {
+            if (@(Invoke-Git @('-C', $projectRoot, 'status', '--porcelain') | Where-Object { $_ }).Count -gt 0) {
+                Write-Error "Jesteś na gałęzi '$current' i masz niezacommitowane zmiany. Zacommituj je lub schowaj (git stash), potem uruchom skrypt ponownie - temat powstanie od '$base'."
+                exit 1
+            }
+            Write-Host "  -> Bieżąca gałąź '$current' - nowy temat startuje od '$base'." -ForegroundColor Yellow
+        }
+        & git -C $projectRoot switch -c $branchName $startPoint
         if ($LASTEXITCODE -ne 0) { Write-Error "Nie udało się utworzyć gałęzi $branchName."; exit 1 }
-        Write-Host "  -> Utworzono gałąź: $branchName (baza: $($config.baseBranch))" -ForegroundColor Gray
+        Write-Host "  -> Utworzono gałąź: $branchName (od: $startPoint)" -ForegroundColor Gray
+        $commitSha = ([string](Invoke-Git @('-C', $projectRoot, 'rev-parse', '--short', 'HEAD'))).Trim()
     }
 }
 
@@ -82,8 +98,9 @@ Get-ChildItem -Path $templateDir -Filter *.md | ForEach-Object {
     $content = $content.Replace("<tytuł>", $topicTitle)
     $content = $content.Replace("<data>", $today)
     $content = $content.Replace("<osoba>", $Author)
+    # <commit> = commit bazowy tematu (intent, plan). <SHA> zostaje - wpisuje go ten, kto
+    # weryfikuje / przegląda / wydaje konkretny commit (verification, review, release).
     $content = $content.Replace("<commit>", $commitSha)
-    $content = $content.Replace("<SHA>", $commitSha)
     $content = $content.Replace("<gałąź>", $branchName)
     $content = $content.Replace("<baza>", $config.baseBranch)
 

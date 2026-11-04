@@ -2,7 +2,7 @@
 
 Status: draft. Tryb: feature. Baza: <commit>. Odpowiedzialny: <osoba>. Źródło: [spec](spec.md).
 
-> Cykl statusu: draft → approved → done. Status approved nadaje wyłącznie człowiek (hook blokuje agenta). Tylko przy statusie approved hook pozwala edytować pliki wymienione w tabeli poniżej — ścieżki względem korzenia repozytorium, w backtickach; dozwolony katalog zakończony ukośnikiem lub wzorzec z gwiazdką (nie może zaczynać się od gwiazdki).
+> Cykl statusu: draft → approved → done (done ustawia człowiek przy akceptacji PR, przed pushem). Status approved nadaje wyłącznie człowiek (hook blokuje agenta). Tylko przy statusie approved hook pozwala edytować pliki wymienione w tabeli poniżej — ścieżki względem korzenia repozytorium, w backtickach; dozwolony katalog zakończony ukośnikiem lub wzorzec z gwiazdką (nie może zaczynać się od gwiazdki).
 > Tryb fix — testy zacommitowane w HEAD są zablokowane do edycji: najpierw commit z czerwonym testem, potem poprawka bez zmiany testu.
 
 ## Pliki i kolejność zmian
@@ -12,6 +12,10 @@ Status: draft. Tryb: feature. Baza: <commit>. Odpowiedzialny: <osoba>. Źródło
 | 1 | `tests/...` | [NEW] | Test jednostkowy / regresyjny wykazujący brak lub potrzebę zmiany | <brak> |
 | 2 | `src/...` | [MODIFY] | Implementacja właściwej logiki biznesowej | Krok 1 |
 | 3 | `src/...` | [MODIFY] | Zmiana kontraktu / konfiguracji / UI | Krok 2 |
+
+## Wymagane skille
+
+<Skille z tabeli routingu w `CLAUDE.md` dla obszarów zmienianych w tym planie, np. `dotnet-skills:efcore-patterns` (kroki 2–3). Recenzent ocenia zmianę także względem tych skilli.>
 
 ## Ryzyka
 

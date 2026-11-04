@@ -9,6 +9,9 @@
 #   5. Pliki spoza dokumentacji wolno edytowac tylko, gdy sa wymienione
 #      w plan.md ze statusem "approved" (plan "done" juz niczego nie autoryzuje).
 #   6. W planie z "Tryb: fix" testy zacommitowane w HEAD sa zablokowane.
+#   7. Dodanie [SlopwatchSuppress] i zmiana wzorca snapshotu (*.verified.*) wymagaja
+#      potwierdzenia czlowieka (ask) - to akceptacja wyjatku / nowego wyniku.
+#   (.slopwatch/ - baseline narzedzia - nalezy do plikow tylko dla czlowieka, pkt 3.)
 # Korzen projektu = korzen repozytorium git edytowanego pliku (dziala tez w worktree).
 # Kod wyjscia 2 = blokada. Kazdy nieoczekiwany blad tez konczy sie blokada (fail-closed).
 # Komunikaty bez polskich znakow celowo - PowerShell 5.1 nie gwarantuje UTF-8 na stderr.
@@ -120,8 +123,7 @@ try {
     }
 
     # --- 5. Zakres z zatwierdzonego planu -------------------------------------
-    $freePaths = @('^docs/', '^\.claude/(?!worktrees/)', '^(CLAUDE|AGENTS|REVIEW|README)\.md$')
-    foreach ($f in $freePaths) { if ($rel -match $f) { exit 0 } }
+    if (Test-FreePath $rel) { exit 0 }
 
     $authorizing = @(Get-PlanAuthorization $root $rel)
     if ($authorizing.Count -eq 0) {
@@ -136,6 +138,25 @@ try {
         if ($tracked -and ($tracked | Where-Object { $_ -ieq $rel })) {
             Deny "Temat $($fixTopics[0].Topic) jest w trybie fix: test '$rel' jest juz zacommitowany i nie wolno go zmieniac. Napraw kod produkcyjny tak, aby test przeszedl. Jesli test jest bledny - zatrzymaj sie i zglos to czlowiekowi."
         }
+    }
+
+    # --- 7a. Wyciszenie slopwatch ([SlopwatchSuppress]) akceptuje czlowiek ----
+    # Atrybut ukrywa wykrycie (np. wylaczony test) przed bramka - agent nie moze sam go dodac.
+    $suppressRx = 'SlopwatchSuppress'
+    $before = if (Test-Path -LiteralPath $full) { [System.IO.File]::ReadAllText($full) } else { '' }
+    $after = switch ($data.tool_name) {
+        'Write'     { [string]$inp.content }
+        'Edit'      { if ($inp.old_string) { $before.Replace([string]$inp.old_string, [string]$inp.new_string) } else { $before + [string]$inp.new_string } }
+        'MultiEdit' { $t = $before; foreach ($e in $inp.edits) { if ($e.old_string) { $t = $t.Replace([string]$e.old_string, [string]$e.new_string) } }; $t }
+        default     { $before + $newText }
+    }
+    if ([regex]::Matches($after, $suppressRx).Count -gt [regex]::Matches($before, $suppressRx).Count) {
+        Ask "Zmiana w '$rel' dodaje [SlopwatchSuppress] - wyciszenie wykrycia slopwatch (np. wylaczonego testu, pustego catch). Wyjatek akceptuje czlowiek; agent powinien naprawic przyczyne."
+    }
+
+    # --- 7b. Wzorce snapshotow (Verify *.verified.*) akceptuje czlowiek -------
+    if ($rel -match '(?i)\.verified\.[^/]+$') {
+        Ask "Plik '$rel' to zatwierdzony wzorzec snapshotu. Zmiana wzorca = akceptacja nowego wyniku - potwierdza ja czlowiek po obejrzeniu roznicy (.received vs .verified)."
     }
 
     exit 0
