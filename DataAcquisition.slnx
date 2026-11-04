@@ -1,4 +1,7 @@
 <Solution>
+  <Project Path="Api/DataAcquisition.Api.csproj" />
+  <Project Path="Api.Tests/DataAcquisition.Api.Tests.csproj" />
+  <Project Path="Contracts/DataAcquisition.Contracts.csproj" />
   <Project Path="Worker/DataAcquisition.Worker.csproj" />
   <Project Path="Worker.Tests/DataAcquisition.Worker.Tests.csproj" />
 </Solution>
