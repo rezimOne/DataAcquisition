@@ -41,12 +41,13 @@ Nowy framework SDLC (PR #3) dodał slopwatch; analiza obecnego kodu wykazała 5 
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 22:45. Gałąź: `topic/DA-003-porzadki-slopwatch`. Baza: `main` (merge-base `85b87a3`). **HEAD: `9b9c9b5`**.
+Wygenerowano: 2026-11-04 22:45. Gałąź: `topic/DA-003-porzadki-slopwatch`. Baza: `main` (merge-base `85b87a3`). **HEAD: `cc6fda7`**.
 
-Diff do review: `git diff 85b87a3 9b9c9b5` — pełna treść w `.claude/sdlc-tmp/DA-003-porzadki-slopwatch.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 85b87a3 cc6fda7` — pełna treść w `.claude/sdlc-tmp/DA-003-porzadki-slopwatch.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (5)
+### Commity (6)
 
+- `cc6fda7` DA-003: pr.md - opis PR dla recenzenta
 - `9b9c9b5` DA-003: verification.md (AC-01..AC-04 dla 6346869)
 - `6346869` DA-003: SW003 log Debug przy zatrzymaniu synchronizacji; SW004 testy bez Task.Delay
 - `37cb18c` DA-003: plan approved (akceptacja czlowieka)
