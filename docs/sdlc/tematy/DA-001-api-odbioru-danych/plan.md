@@ -46,14 +46,14 @@ dotnet format DataAcquisition.slnx --verify-no-changes
 | AC-02 – AC-07 | Nazwane testy integracyjne w `Api.Tests` (nazwa testu ↔ AC w `verification.md`)                               |
 | AC-08         | Test startu bez klucza / z krótkim kluczem; test logów; `grep` po `Api/appsettings*.json` bez wartości klucza |
 
-Test ręczny (opcjonalny, wynik w `verification.md`): `dotnet user-secrets set "ApiKey:Value" <klucz> --project Api`, `dotnet run --project Api`, `curl` POST/GET/health na `http://localhost:5100`.
+Test ręczny (opcjonalny, wynik w `verification.md`): `dotnet user-secrets set "DataAcquisition:Api:ApiKey" <klucz> --project Api`, `dotnet run --project Api`, `curl` POST/GET/health na `http://localhost:5100`.
 
 Wymagania: .NET SDK 10. Bez bazy danych, bez zewnętrznych usług, bez prawdziwych sekretów.
 
 ## Wydanie i odtworzenie (Rollback)
 
 - Brak migracji bazy (store w pamięci).
-- Nowa wymagana konfiguracja: `ApiKey__Value` (zmienna środowiskowa, min. 32 znaki) — bez niej API nie startuje.
+- Nowa wymagana konfiguracja: `DataAcquisition__Api__ApiKey` (zmienna środowiskowa, min. 32 znaki) — bez niej API nie startuje.
 - Nowy proces/usługa `DataAcquisition.Api`; worker bez zmian, więc rollback = niewdrożenie / zatrzymanie API albo revert commitów tematu (brak danych trwałych do odtworzenia).
 - Sugestia dla człowieka (poza zakresem agenta): ustawić `testCommand` w `.claude/sdlc.json` na `["dotnet", "test", "DataAcquisition.slnx", "--nologo"]`, żeby `tools/Test-TopicReady.ps1` uruchamiał testy przed pushem.
 
@@ -61,7 +61,8 @@ Wymagania: .NET SDK 10. Bez bazy danych, bez zewnętrznych usług, bez prawdziwy
 
 - **Akceptacja planu**: zaakceptowano — nog_programista2, 2026-11-04
 - **Odstępstwa**:
-  1. `Api/appsettings.json` i `Api/appsettings.Development.json` **nie zostały utworzone** — zapis zablokowany regułą uprawnień agenta (deny dla `appsettings*`). API działa na domyślnej konfiguracji (klucz i tak spoza `appsettings`); skutek: logi `Microsoft.AspNetCore` na poziomie `Information` (więcej szumu). Do uzupełnienia ręcznie przez człowieka (`Logging:LogLevel:Microsoft.AspNetCore = Warning`, `AllowedHosts = *`).
+  1. ~~`Api/appsettings.json` i `Api/appsettings.Development.json` nie zostały utworzone~~ — **rozwiązane**: zapis był zablokowany regułą uprawnień agenta (deny dla `appsettings*`), pliki utworzył człowiek (`Microsoft.AspNetCore = Warning`, `AllowedHosts = *`; Development: `DataAcquisition = Debug`). Agent nie może odczytać ich treści — działanie potwierdzone zachowaniem uruchomionego API (`verification.md`).
   2. Wymóg spec „`timestamp` z przesunięciem” nie jest egzekwowany: `System.Text.Json` przyjmuje datę bez strefy jako czas lokalny serwera. Worker MTConnect wysyła czasy z `Z`, więc ryzyko jest niskie; wymuszenie (własny konwerter w `Contracts/`) — do decyzji w kolejnym temacie.
   3. Test-first realizowany w drzewie roboczym (zaślepki `NotImplementedException` → testy czerwone 61/73 → implementacja → 73/73), a commity per krok planu, więc commit `Api/` poprzedza commit `Api.Tests/`.
   4. Klucz API w testach generowany losowo w czasie wykonania zamiast stałej — hook skanu sekretów odrzucił literał.
+  5. Nazwa klucza konfiguracji zmieniona z `ApiKey:Value` na `DataAcquisition:Api:ApiKey` (zmienna `DataAcquisition__Api__ApiKey`) na prośbę człowieka — nazwa ma jednoznacznie wskazywać projekt w User Secrets i zmiennych środowiskowych. Zmiana w `Api/ApiKey/`, `Api.Tests/` i `spec.md` (spec zatwierdzony — zmiana kontraktu konfiguracji za zgodą człowieka, 2026-11-04).

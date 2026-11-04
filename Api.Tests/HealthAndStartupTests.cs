@@ -38,7 +38,7 @@ public sealed class HealthAndStartupTests
         var exception = Record.Exception(() => factory.CreateClient());
 
         var validation = Assert.IsType<OptionsValidationException>(exception);
-        Assert.Contains("ApiKey:Value", validation.Message);
+        Assert.Contains("DataAcquisition:Api:ApiKey", validation.Message);
         if (!string.IsNullOrEmpty(apiKey))
         {
             Assert.DoesNotContain(apiKey, validation.Message);

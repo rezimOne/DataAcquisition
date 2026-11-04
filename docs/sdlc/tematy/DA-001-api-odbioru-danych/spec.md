@@ -27,7 +27,7 @@ Status: approved. Odpowiedzialny: nog_programista2. Data: 2026-11-04. Źródło:
 
 ### Start aplikacji
 
-Brak lub zbyt krótki klucz API w konfiguracji (`ApiKey:Value`, min. 32 znaki) → aplikacja nie startuje (walidacja Options przy starcie, `ValidateOnStart`), komunikat wskazuje nazwę klucza konfiguracji, nie wartość.
+Brak lub zbyt krótki klucz API w konfiguracji (`DataAcquisition:Api:ApiKey`, min. 32 znaki) → aplikacja nie startuje (walidacja Options przy starcie, `ValidateOnStart`), komunikat wskazuje nazwę klucza konfiguracji, nie wartość.
 
 ## Dane i kontrakty
 
@@ -95,7 +95,7 @@ Interfejs `IObservationStore` (zapis paczki zwracający `accepted`/`duplicates`,
 ## Dostęp i interfejsy
 
 - **Uwierzytelnianie**: nagłówek `X-Api-Key` wymagany dla całej grupy `/api/v1`. Porównanie w czasie stałym (`CryptographicOperations.FixedTimeEquals`). Brak/błąd → `401` + `ProblemDetails` bez wskazówki, czy klucz był pusty czy błędny.
-- **Konfiguracja klucza**: `ApiKey:Value` — lokalnie User Secrets (`dotnet user-secrets set "ApiKey:Value" "<klucz>" --project Api`), produkcyjnie zmienna środowiskowa `ApiKey__Value`. W `appsettings*.json` **brak** wartości. Testy używają jawnie fikcyjnego klucza ustawianego w `WebApplicationFactory`.
+- **Konfiguracja klucza**: `DataAcquisition:Api:ApiKey` (nazwa z prefiksem projektu, ta sama sekcja posłuży klientowi API w workerze) — lokalnie User Secrets (`dotnet user-secrets set "DataAcquisition:Api:ApiKey" "<klucz>" --project Api`), produkcyjnie zmienna środowiskowa `DataAcquisition__Api__ApiKey`. Zalecany format wartości: prefiks `daq-api-` + losowe ≥ 48 znaków hex (rozpoznawalny w skanerach sekretów i rotacji). W `appsettings*.json` **brak** wartości. Testy używają jawnie fikcyjnego klucza ustawianego w `WebApplicationFactory`.
 - **Role**: jedna rola (posiadacz klucza) dla zapisu i odczytu; rozdział ról poza zakresem.
 - **Logowanie**: `Information` — przyjęta paczka (`deviceId`, `instanceId`, `accepted`, `duplicates`); `Warning` — odrzucony klucz (bez wartości nagłówka), duplikat o innej treści. Nigdy nie logujemy wartości klucza ani nagłówka `X-Api-Key`.
 - **Port lokalny**: `http://localhost:5100` (`launchSettings.json`) — 5000 zajmuje symulator MTConnect.
@@ -111,7 +111,7 @@ Interfejs `IObservationStore` (zapis paczki zwracający `accepted`/`duplicates`,
 | AC-05 | Ta sama paczka wysłana dwukrotnie; paczka częściowo nakładająca się (2 stare + 1 nowa); 2 równoległe identyczne paczki | 2. wysłanie `{accepted:0, duplicates:N}`; nakładająca `{accepted:1, duplicates:2}`; równoległe: suma `accepted` = liczba unikalnych; GET bez duplikatów |
 | AC-06 | Obserwacje 2 urządzeń i 2 `instanceId`; GET z `deviceId`, `from`/`to`, `limit=2`; GET `from >= to`; GET `limit=0` i `limit=1001`; GET bez `deviceId`; GET nieznanego urządzenia | Tylko obserwacje urządzenia z zakresu `[from, to)`, sortowanie (`instanceId`, `sequence`), max `limit`, `truncated` poprawne; błędne parametry → `400`; nieznane urządzenie → `200` pusta lista |
 | AC-07 | GET `/health` bez klucza | `200`, `Healthy` |
-| AC-08 | Start aplikacji bez `ApiKey:Value` oraz z kluczem krótszym niż 32 znaki; przegląd repozytorium i logów z testów | Start kończy się wyjątkiem walidacji Options wskazującym `ApiKey:Value`; brak wartości klucza w `appsettings*.json` i w przechwyconych logach (`FakeLogger`/sink testowy) |
+| AC-08 | Start aplikacji bez `DataAcquisition:Api:ApiKey` oraz z kluczem krótszym niż 32 znaki; przegląd repozytorium i logów z testów | Start kończy się wyjątkiem walidacji Options wskazującym `DataAcquisition:Api:ApiKey`; brak wartości klucza w `appsettings*.json` i w przechwyconych logach (`FakeLogger`/sink testowy) |
 
 ## Ryzyka i rozstrzygnięcia
 

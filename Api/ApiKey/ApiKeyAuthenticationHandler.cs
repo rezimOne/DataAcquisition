@@ -28,7 +28,7 @@ internal sealed class ApiKeyAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        var expected = Encoding.UTF8.GetBytes(apiKeyOptions.Value.Value!);
+        var expected = Encoding.UTF8.GetBytes(apiKeyOptions.Value.ApiKey!);
         var actual = Encoding.UTF8.GetBytes(provided.ToString());
         if (!CryptographicOperations.FixedTimeEquals(actual, expected))
         {

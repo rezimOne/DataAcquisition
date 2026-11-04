@@ -1,3 +1,4 @@
+using DataAcquisition.Api.ApiKey;
 using DataAcquisition.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -33,7 +34,7 @@ public sealed class ApiFactory(string? apiKey) : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(
-            new Dictionary<string, string?> { ["ApiKey:Value"] = apiKey }));
+            new Dictionary<string, string?> { [ApiKeyOptions.ConfigurationKey] = apiKey }));
         builder.ConfigureLogging(logging => logging.AddFakeLogging());
     }
 }
