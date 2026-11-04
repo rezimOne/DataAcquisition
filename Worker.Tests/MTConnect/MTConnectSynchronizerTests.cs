@@ -146,6 +146,26 @@ public sealed class MTConnectSynchronizerTests
         Assert.Contains(Logs(LogLevel.Information), r => r.Message.Contains("restarted") && r.Message.Contains(InstanceB.ToString()));
     }
 
+    [Fact]
+    public async Task StepAsync_RestartedAgentAnswersOutOfRange_LogsRestartAndReprobes()
+    {
+        // Found in the manual test (AC-08): a restarted agent has lower sequences, so /sample?from=<old next>
+        // returns OUT_OF_RANGE instead of a document with the new instanceId.
+        await SyncAsync(next: 6900);
+        _agent.SampleThrows(new MTConnectAgentErrorException(MTConnectAgentErrorException.OutOfRange, "'from' outside buffer"))
+            .Current(Streams(InstanceB, 28, 27, 27))
+            .Probe(Devices(InstanceB))
+            .Sample(Streams(InstanceB, 29, 28, 28));
+
+        await Step();
+        await Step();
+
+        Assert.Equal(["sample?from=6900&count=1000", "current", "probe", "sample?from=28&count=1000"], _agent.Calls);
+        Assert.Equal([27L, 28L], _sink.Sequences);
+        Assert.Contains(Logs(LogLevel.Information), r => r.Message.Contains("restarted") && r.Message.Contains(InstanceB.ToString()));
+        Assert.Empty(Logs(LogLevel.Warning));
+    }
+
     // AC-05
 
     [Fact]
