@@ -1,6 +1,6 @@
 # Intent: DA-001 — API odbioru danych z maszyn
 
-ID: DA-001. Status: ready. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 495a418.
+ID: DA-001. Status: verified. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 495a418.
 
 ## Problem i dowód
 
