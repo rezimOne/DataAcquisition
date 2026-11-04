@@ -45,12 +45,13 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 14:38. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `10049e8`**.
+Wygenerowano: 2026-11-04 14:39. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `d11c13f`**.
 
-Diff do review: `git diff 417e369 10049e8` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 417e369 d11c13f` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (11)
+### Commity (12)
 
+- `d11c13f` DA-002: pr.md - dane automatyczne
 - `10049e8` DA-002: verification.md dla 6538cca, pr.md po review 1
 - `6538cca` DA-002: /sample od razu po synchronizacji; zapas wznowienia ograniczony do 10% bufora
 - `bf41614` DA-002: R-01 wznowienie z bufora agenta po resync; R-02 release.md; R-03 dokladne asercje zakresu
