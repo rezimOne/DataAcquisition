@@ -1,6 +1,6 @@
 # Pull Request: DA-002 — Klient MTConnect w workerze
 
-Status: draft. Gałąź: topic/DA-002-klient-mtconnect. Baza: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
+Status: approved. Gałąź: topic/DA-002-klient-mtconnect. Baza: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
 
 > Cykl statusu: draft → approved. Status approved nadaje wyłącznie człowiek po przeczytaniu `review.md` (hook blokuje agenta). Push gałęzi przepuszcza dopiero `tools/Test-TopicReady.ps1` (hook git pre-push). Merge wykonuje człowiek na zdalnym repozytorium.
 
@@ -45,6 +45,7 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
+
 Wygenerowano: 2026-11-04 14:44. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `f6855f7`**.
 
 Diff do review: `git diff 417e369 f6855f7` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
@@ -71,58 +72,59 @@ Diff do review: `git diff 417e369 f6855f7` — pełna treść w `.claude/sdlc-tm
 
 ### Zmienione pliki
 
-| Zmiana | Plik | W planie? |
-|---|---|---|
-| M | `Worker.Tests/DataAcquisition.Worker.Tests.csproj` | tak |
-| A | `Worker.Tests/Fixtures/current.xml` | tak |
-| A | `Worker.Tests/Fixtures/error-out-of-range.xml` | tak |
-| A | `Worker.Tests/Fixtures/malformed.xml` | tak |
-| A | `Worker.Tests/Fixtures/probe.xml` | tak |
-| A | `Worker.Tests/Fixtures/sample-conditions.xml` | tak |
-| A | `Worker.Tests/Fixtures/sample-empty.xml` | tak |
-| A | `Worker.Tests/Fixtures/sample.xml` | tak |
-| A | `Worker.Tests/Fixtures/streams-foreign-namespace.xml` | tak |
-| A | `Worker.Tests/MTConnect/Fixtures.cs` | tak |
-| A | `Worker.Tests/MTConnect/MTConnectClientTests.cs` | tak |
-| A | `Worker.Tests/MTConnect/MTConnectParserTests.cs` | tak |
-| A | `Worker.Tests/MTConnect/MTConnectSynchronizerTests.cs` | tak |
-| A | `Worker.Tests/MTConnect/TestDoubles.cs` | tak |
-| M | `Worker.Tests/WorkerTests.cs` | tak |
-| M | `Worker/DataAcquisition.Worker.csproj` | tak |
-| A | `Worker/MTConnect/MTConnectClient.cs` | tak |
-| A | `Worker/MTConnect/MTConnectModel.cs` | tak |
-| A | `Worker/MTConnect/MTConnectOptions.cs` | tak |
-| A | `Worker/MTConnect/MTConnectParser.cs` | tak |
-| A | `Worker/MTConnect/MTConnectServiceCollectionExtensions.cs` | tak |
-| A | `Worker/MTConnect/MTConnectSynchronizer.cs` | tak |
-| A | `Worker/MTConnect/ObservationSinks.cs` | tak |
-| M | `Worker/Program.cs` | tak |
-| M | `Worker/Worker.cs` | tak |
-| M | `docs/sdlc/01-plan/BACKLOG.md` | dokumentacja |
-| M | `docs/sdlc/tematy/DA-001-api-odbioru-danych/intent.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-002-klient-mtconnect/intent.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-002-klient-mtconnect/plan.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-002-klient-mtconnect/release.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-002-klient-mtconnect/spec.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-002-klient-mtconnect/verification.md` | dokumentacja |
+| Zmiana | Plik                                                       | W planie?    |
+| ------ | ---------------------------------------------------------- | ------------ |
+| M      | `Worker.Tests/DataAcquisition.Worker.Tests.csproj`         | tak          |
+| A      | `Worker.Tests/Fixtures/current.xml`                        | tak          |
+| A      | `Worker.Tests/Fixtures/error-out-of-range.xml`             | tak          |
+| A      | `Worker.Tests/Fixtures/malformed.xml`                      | tak          |
+| A      | `Worker.Tests/Fixtures/probe.xml`                          | tak          |
+| A      | `Worker.Tests/Fixtures/sample-conditions.xml`              | tak          |
+| A      | `Worker.Tests/Fixtures/sample-empty.xml`                   | tak          |
+| A      | `Worker.Tests/Fixtures/sample.xml`                         | tak          |
+| A      | `Worker.Tests/Fixtures/streams-foreign-namespace.xml`      | tak          |
+| A      | `Worker.Tests/MTConnect/Fixtures.cs`                       | tak          |
+| A      | `Worker.Tests/MTConnect/MTConnectClientTests.cs`           | tak          |
+| A      | `Worker.Tests/MTConnect/MTConnectParserTests.cs`           | tak          |
+| A      | `Worker.Tests/MTConnect/MTConnectSynchronizerTests.cs`     | tak          |
+| A      | `Worker.Tests/MTConnect/TestDoubles.cs`                    | tak          |
+| M      | `Worker.Tests/WorkerTests.cs`                              | tak          |
+| M      | `Worker/DataAcquisition.Worker.csproj`                     | tak          |
+| A      | `Worker/MTConnect/MTConnectClient.cs`                      | tak          |
+| A      | `Worker/MTConnect/MTConnectModel.cs`                       | tak          |
+| A      | `Worker/MTConnect/MTConnectOptions.cs`                     | tak          |
+| A      | `Worker/MTConnect/MTConnectParser.cs`                      | tak          |
+| A      | `Worker/MTConnect/MTConnectServiceCollectionExtensions.cs` | tak          |
+| A      | `Worker/MTConnect/MTConnectSynchronizer.cs`                | tak          |
+| A      | `Worker/MTConnect/ObservationSinks.cs`                     | tak          |
+| M      | `Worker/Program.cs`                                        | tak          |
+| M      | `Worker/Worker.cs`                                         | tak          |
+| M      | `docs/sdlc/01-plan/BACKLOG.md`                             | dokumentacja |
+| M      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/intent.md`     | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-002-klient-mtconnect/intent.md`       | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-002-klient-mtconnect/plan.md`         | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-002-klient-mtconnect/release.md`      | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-002-klient-mtconnect/spec.md`         | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-002-klient-mtconnect/verification.md` | dokumentacja |
 
 Statystyka: 32 files changed, 2333 insertions(+), 76 deletions(-)
 
 ### Kryteria akceptacji
 
-| AC | Kryterium (intent.md) | Wynik (verification.md) |
-|---|---|---|
-| AC-01 | `dotnet build DataAcquisition.slnx`, `dotnet test DataAcquisition.slnx` i `dotnet format DataAcquisition.slnx --verify-no-changes` kończą się kodem 0. | PASS |
-| AC-02 | Parser zamienia odpowiedzi `/current` i `/sample` (fixtures XML w formacie agenta, w tym CONDITION `Normal`/`Fault`, wartość `UNAVAILABLE`, puste `/sample`) na obserwacje z poprawnymi polami oraz nagłówek (`instanceId`, `nextSequence`, `firstSequence`, `lastSequence`); `type`/`subType` pochodzą z `/probe`; czas w UTC. | PASS |
-| AC-03 | Po starcie worker wykonuje `/probe` → `/current` → `/sample?from=<nextSequence>` i w kolejnych cyklach używa `nextSequence` z poprzedniej odpowiedzi; przy ciągłej pracy każda obserwacja trafia do odbiorcy dokładnie raz i w kolejności `sequence` (brak luk i duplikatów w ramach jednej instancji agenta). | PASS |
-| AC-04 | Zmiana `Header/@instanceId` powoduje resynchronizację przez `/current` i log `Information`; dane nowej instancji są pobierane dalej bez restartu workera. | PASS (po poprawkach `96142b5`, `bf41614`) |
-| AC-05 | Odpowiedź `OUT_OF_RANGE` powoduje resynchronizację przez `/current` i log `Warning` z wielkością utraconego zakresu sekwencji; worker działa dalej. | PASS (po poprawkach `bf41614`, `6538cca`) |
-| AC-06 | Niedostępny agent, timeout, HTTP 5xx lub niepoprawny XML → log `Warning`, ponowienie z rosnącym opóźnieniem (z górnym limitem); po powrocie agenta pobieranie wznawia się bez restartu workera; host nie kończy pracy. | PASS |
-| AC-07 | Konfiguracja (adres agenta, interwał, `count`, timeout) ładowana przez Options z walidacją przy starcie — błędna wartość zatrzymuje start z komunikatem wskazującym klucz; zatrzymanie hosta (Ctrl+C / `StopAsync`) kończy pętlę bez wyjątku. | PASS |
-| AC-08 | Test ręczny z symulatorem (`--seed 42`, min. 2 minuty): ciągłość sekwencji w logach odbiorcy, w tym po restarcie symulatora w trakcie pracy workera (zmiana `instanceId`). | PASS (przebieg 2 na `96142b5`; przebieg 6 na `6538cca`) |
+| AC    | Kryterium (intent.md)                                                                                                                                                                                                                                                                                                           | Wynik (verification.md)                                 |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| AC-01 | `dotnet build DataAcquisition.slnx`, `dotnet test DataAcquisition.slnx` i `dotnet format DataAcquisition.slnx --verify-no-changes` kończą się kodem 0.                                                                                                                                                                          | PASS                                                    |
+| AC-02 | Parser zamienia odpowiedzi `/current` i `/sample` (fixtures XML w formacie agenta, w tym CONDITION `Normal`/`Fault`, wartość `UNAVAILABLE`, puste `/sample`) na obserwacje z poprawnymi polami oraz nagłówek (`instanceId`, `nextSequence`, `firstSequence`, `lastSequence`); `type`/`subType` pochodzą z `/probe`; czas w UTC. | PASS                                                    |
+| AC-03 | Po starcie worker wykonuje `/probe` → `/current` → `/sample?from=<nextSequence>` i w kolejnych cyklach używa `nextSequence` z poprzedniej odpowiedzi; przy ciągłej pracy każda obserwacja trafia do odbiorcy dokładnie raz i w kolejności `sequence` (brak luk i duplikatów w ramach jednej instancji agenta).                  | PASS                                                    |
+| AC-04 | Zmiana `Header/@instanceId` powoduje resynchronizację przez `/current` i log `Information`; dane nowej instancji są pobierane dalej bez restartu workera.                                                                                                                                                                       | PASS (po poprawkach `96142b5`, `bf41614`)               |
+| AC-05 | Odpowiedź `OUT_OF_RANGE` powoduje resynchronizację przez `/current` i log `Warning` z wielkością utraconego zakresu sekwencji; worker działa dalej.                                                                                                                                                                             | PASS (po poprawkach `bf41614`, `6538cca`)               |
+| AC-06 | Niedostępny agent, timeout, HTTP 5xx lub niepoprawny XML → log `Warning`, ponowienie z rosnącym opóźnieniem (z górnym limitem); po powrocie agenta pobieranie wznawia się bez restartu workera; host nie kończy pracy.                                                                                                          | PASS                                                    |
+| AC-07 | Konfiguracja (adres agenta, interwał, `count`, timeout) ładowana przez Options z walidacją przy starcie — błędna wartość zatrzymuje start z komunikatem wskazującym klucz; zatrzymanie hosta (Ctrl+C / `StopAsync`) kończy pętlę bez wyjątku.                                                                                   | PASS                                                    |
+| AC-08 | Test ręczny z symulatorem (`--seed 42`, min. 2 minuty): ciągłość sekwencji w logach odbiorcy, w tym po restarcie symulatora w trakcie pracy workera (zmiana `instanceId`).                                                                                                                                                      | PASS (przebieg 2 na `96142b5`; przebieg 6 na `6538cca`) |
+
 <!-- auto:end -->
 
 ## Decyzja
 
-- **Akceptacja do wypchnięcia**: <osoba, data — approved / changes-requested> — wpisuje człowiek po przeczytaniu `review.md`.
+- **Akceptacja do wypchnięcia**: zaakceptowano — nog_programista2, 2026-11-04.
 - **Zdalny PR / merge**: <link lub numer PR na zdalnym repozytorium, data merge — uzupełnia człowiek>.
