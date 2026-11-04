@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MTConnectStreams xmlns="urn:mtconnect.org:MTConnectStreams:1.3">
+  <Header instanceId="1793792583" nextSequence="10" firstSequence="1" lastSequence="9"/>
+  <Streams>
+    <DeviceStream name="VMC5AX">
+      <ComponentStream component="Linear" name="X" componentId="x">
+        <Samples>
+          <Position dataItemId="xpos" sequence="1">1.0

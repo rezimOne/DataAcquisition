@@ -1,95 +1,95 @@
+using DataAcquisition.Worker.MTConnect;
+using DataAcquisition.Worker.Tests.MTConnect;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Testing;
-using Microsoft.Extensions.Time.Testing;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace DataAcquisition.Worker.Tests;
 
+/// <summary>Host-level tests: registration from Program.cs, configuration validation, start/stop.</summary>
 public sealed class WorkerTests
 {
-    private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(5);
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private readonly FakeLogger<Worker> _logger = new();
-    private readonly TimerCountingTimeProvider _timeProvider = new();
+    [Theory]
+    [InlineData("AgentUrl", "ftp://agent:5000", "DataAcquisition:MTConnect:AgentUrl")]
+    [InlineData("AgentUrl", "/relative", "DataAcquisition:MTConnect:AgentUrl")]
+    [InlineData("SampleCount", "0", "DataAcquisition:MTConnect:SampleCount")]
+    [InlineData("SampleCount", "1001", "DataAcquisition:MTConnect:SampleCount")]
+    [InlineData("PollInterval", "00:00:00", "DataAcquisition:MTConnect:PollInterval")]
+    [InlineData("RequestTimeout", "00:10:00", "DataAcquisition:MTConnect:RequestTimeout")]
+    [InlineData("RetryMaxDelay", "00:00:00.500", "DataAcquisition:MTConnect:RetryInitialDelay")]
+    public async Task StartAsync_InvalidConfiguration_FailsWithConfigurationKey(string setting, string value, string expectedKey)
+    {
+        using var host = BuildHost(new Dictionary<string, string?> { [$"DataAcquisition:MTConnect:{setting}"] = value });
+
+        var exception = await Record.ExceptionAsync(() => host.StartAsync(Ct));
+
+        var validation = Assert.IsType<OptionsValidationException>(exception);
+        Assert.Contains(expectedKey, validation.Message);
+    }
 
     [Fact]
-    public async Task ExecuteAsync_AfterStartAndOneSecond_LogsTwice()
+    public void Options_NoConfiguration_UsesSimulatorDefaults()
     {
-        using var worker = new Worker(_logger, _timeProvider);
+        using var host = BuildHost();
 
-        await worker.StartAsync(TestContext.Current.CancellationToken);
-        await WaitUntilAsync(() => _timeProvider.CreatedTimers == 1);
-        _timeProvider.Advance(TimeSpan.FromSeconds(1));
-        await WaitUntilAsync(() => _timeProvider.CreatedTimers == 2);
+        var options = host.Services.GetRequiredService<IOptions<MTConnectOptions>>().Value;
 
-        var records = _logger.Collector.GetSnapshot();
-        Assert.Equal(2, records.Count);
-        Assert.All(records, record =>
+        Assert.Equal(
+            (new Uri("http://localhost:5000"), TimeSpan.FromSeconds(1), 1000, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30)),
+            (options.AgentUrl, options.PollInterval, options.SampleCount, options.RequestTimeout, options.RetryInitialDelay, options.RetryMaxDelay));
+    }
+
+    [Fact]
+    public async Task StopAsync_WhileRequestInProgress_CompletesWithoutWarningsOrErrors()
+    {
+        var requestStarted = new TaskCompletionSource();
+        var agent = new FakeAgent();
+        agent.Probes.Enqueue(async ct =>
         {
-            Assert.Equal(LogLevel.Information, record.Level);
-            Assert.StartsWith("Worker running at", record.Message);
+            requestStarted.SetResult();
+            await Task.Delay(Timeout.Infinite, ct);
+            throw new InvalidOperationException("unreachable");
         });
+        using var host = BuildHost(agent: agent);
 
-        await worker.StopAsync(TestContext.Current.CancellationToken);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_BeforeOneSecondElapsed_LogsOnce()
-    {
-        using var worker = new Worker(_logger, _timeProvider);
-
-        await worker.StartAsync(TestContext.Current.CancellationToken);
-        await WaitUntilAsync(() => _timeProvider.CreatedTimers == 1);
-        _timeProvider.Advance(TimeSpan.FromMilliseconds(999));
-
-        Assert.Equal(1, _logger.Collector.Count);
-
-        _timeProvider.Advance(TimeSpan.FromMilliseconds(1));
-        await WaitUntilAsync(() => _logger.Collector.Count == 2);
-
-        await worker.StopAsync(TestContext.Current.CancellationToken);
-    }
-
-    [Fact]
-    public async Task StopAsync_WhenRunning_CompletesWithoutExceptionAndStopsLogging()
-    {
-        using var worker = new Worker(_logger, _timeProvider);
-
-        await worker.StartAsync(TestContext.Current.CancellationToken);
-        await WaitUntilAsync(() => _timeProvider.CreatedTimers == 1);
-
-        var exception = await Record.ExceptionAsync(
-            () => worker.StopAsync(TestContext.Current.CancellationToken));
-        _timeProvider.Advance(TimeSpan.FromSeconds(5));
+        await host.StartAsync(Ct);
+        await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Ct);
+        var exception = await Record.ExceptionAsync(() => host.StopAsync(Ct));
 
         Assert.Null(exception);
-        Assert.NotNull(worker.ExecuteTask);
-        Assert.True(worker.ExecuteTask.IsCompleted);
-        Assert.Equal(1, _logger.Collector.Count);
+        var worker = host.Services.GetServices<IHostedService>().OfType<Worker>().Single();
+        Assert.True(worker.ExecuteTask!.IsCompletedSuccessfully);
+        var logs = host.Services.GetFakeLogCollector().GetSnapshot();
+        Assert.DoesNotContain(logs, r => r.Level >= LogLevel.Warning);
     }
 
-    private static async Task WaitUntilAsync(Func<bool> condition)
+    [Fact]
+    public void Services_DefaultRegistration_UsesLoggingSinkAndHttpAgent()
     {
-        using var timeout = new CancellationTokenSource(WaitTimeout);
-        while (!condition())
-        {
-            await Task.Delay(10, timeout.Token);
-        }
+        using var host = BuildHost();
+
+        Assert.IsType<LoggingObservationSink>(host.Services.GetRequiredService<IObservationSink>());
+        Assert.IsType<MTConnectClient>(host.Services.GetRequiredService<IMTConnectAgent>());
     }
 
-    // Worker starts ExecuteAsync in the background, so tests must wait until it
-    // has scheduled its delay before advancing fake time.
-    private sealed class TimerCountingTimeProvider : FakeTimeProvider
+    /// <summary>Same registrations as Program.cs; optional fake agent replaces HTTP.</summary>
+    private static IHost BuildHost(Dictionary<string, string?>? settings = null, IMTConnectAgent? agent = null)
     {
-        private int _createdTimers;
-
-        public int CreatedTimers => Volatile.Read(ref _createdTimers);
-
-        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Testing" });
+        builder.Configuration.AddInMemoryCollection(settings ?? []);
+        builder.Logging.ClearProviders().AddFakeLogging();
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddMTConnect();
+        builder.Services.AddHostedService<Worker>();
+        if (agent is not null)
         {
-            var timer = base.CreateTimer(callback, state, dueTime, period);
-            Interlocked.Increment(ref _createdTimers);
-            return timer;
+            builder.Services.AddSingleton(agent);
         }
+        return builder.Build();
     }
 }

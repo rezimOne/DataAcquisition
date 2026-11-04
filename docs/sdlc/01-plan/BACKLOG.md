@@ -8,7 +8,8 @@ Wszystkie planowane, trwające i zakończone prace rozwojowe są ewidencjonowane
 
 | ID | Status | Priorytet | Skala | Tytuł i link do intencji | Odpowiedzialny | Warunek / Zależność |
 |---|---|---|---|---|---|---|
-| [DA-001](../tematy/DA-001-api-odbioru-danych/intent.md) | ready | P2 | M | API odbioru danych z maszyn | nog_programista2 | - |
+| [DA-001](../tematy/DA-001-api-odbioru-danych/intent.md) | verified | P2 | M | API odbioru danych z maszyn | nog_programista2 | - |
+| [DA-002](../tematy/DA-002-klient-mtconnect/intent.md) | ready | P2 | M | Klient MTConnect w workerze | nog_programista2 | - |
 
 ---
 
