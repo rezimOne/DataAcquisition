@@ -16,7 +16,9 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 - `Api/Observations/ObservationBatchValidator.cs` — ręczne reguły ze spec; klucze błędów to ścieżki pól (`observations[3].dataItemId`); reguły krzyżowe: `conditionLevel` tylko i zawsze dla `Condition`, unikalne `sequence` w paczce.
 - `Api/Observations/InMemoryObservationStore.cs` — `ConcurrentDictionary.TryAdd` po kluczu (`deviceId`, `instanceId`, `sequence`), pierwszy zapis wygrywa; `Warning` (bez wartości) dla duplikatu o innej treści; sortowanie (`instanceId`, `sequence`).
 - `Api/Program.cs` — `AddProblemDetails` + `UseExceptionHandler` + `UseStatusCodePages` (błędy bindowania JSON też jako `problem+json`), `/health` bez uwierzytelnienia; `launchSettings.json` na porcie 5100 (5000 zajmuje symulator).
-- `Api.Tests/` — 73 testy: integracyjne na `WebApplicationFactory` (środowisko `Testing`, losowy klucz per przebieg, `FakeLogger` do sprawdzania logów) + jednostkowe walidatora i store'a.
+- `Contracts/StrictStringEnumConverter.cs` (po review R-01) — enumy w JSON wyłącznie jako stringi; liczby (`7`) i liczbowe stringi (`"7"`) → `400`. Walidator dodatkowo sprawdza `Enum.IsDefined`.
+- Zły / brakujący `Content-Type` → `415` `ProblemDetails` (zachowanie Minimal API; spec zmieniony po review R-02).
+- `Api.Tests/` — 82 testy: integracyjne na `WebApplicationFactory` (środowisko `Testing`, losowy klucz per przebieg, `FakeLogger` do sprawdzania logów) + jednostkowe walidatora i store'a.
 - `DataAcquisition.slnx` — 3 nowe projekty.
 
 ## Ryzyka i wpływ
@@ -29,14 +31,14 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 
 ## Jak testowano
 
-- `dotnet build DataAcquisition.slnx` — 0 ostrzeżeń, 0 błędów; `dotnet test DataAcquisition.slnx` — Api.Tests 73/73, Worker.Tests 3/3; `dotnet format --verify-no-changes` — kod 0 (stan `d728000`).
-- Test-first: na zaślepkach walidatora i store'a 61/73 czerwonych, po implementacji 73/73.
+- `dotnet build DataAcquisition.slnx` — 0 ostrzeżeń, 0 błędów; `dotnet test DataAcquisition.slnx` — Api.Tests 82/82, Worker.Tests 3/3; `dotnet format --verify-no-changes` — kod 0 (stan `d1d9f5d`; późniejsze commity zmieniają wyłącznie `docs/` — `git diff --stat d1d9f5d HEAD -- . ':!docs'` pusty). `dotnet publish` z `release.md` — kod 0.
+- Test-first: na zaślepkach walidatora i store'a 61/73 czerwonych, po implementacji 73/73; po review 1 nowe testy R-01 czerwone 7/82 przed poprawką, 82/82 po.
 - Ręcznie (`dotnet run`, curl na `:5100`): health 200, POST bez klucza 401, POST 200 `{1,0}`, powtórka `{0,1}`, GET zwraca dane w UTC, GET bez `deviceId` 400; start ze starą nazwą zmiennej `ApiKey__Value` → `OptionsValidationException`; klucz nie pojawia się w logu procesu (`grep -c` = 0). Dodatkowo potwierdzone działanie klucza z User Secrets.
 - **Nie testowano**: obciążenia i długotrwałej pracy, integracji z workerem i symulatorem, HTTPS.
 
 ## Uwagi dla recenzenta
 
-- **Odstępstwa od planu** (sekcja w `plan.md`): (1) `Api/appsettings*.json` utworzył człowiek — agent ma regułę odmowy odczytu, więc **nie zweryfikował ich treści**; proszę sprawdzić w diffie, że nie ma w nich klucza. (2) `timestamp` bez przesunięcia nie jest odrzucany (STJ przyjmuje czas lokalny serwera) mimo wymogu spec — do decyzji w temacie wysyłki z workera. (3) Commit `Api/` przed `Api.Tests/` (test-first w drzewie roboczym). (4) Klucz testowy losowy zamiast stałej (hook sekretów). (5) Nazwa klucza zmieniona na `DataAcquisition:Api:ApiKey` na prośbę człowieka — zmiana w zatwierdzonym `spec.md`.
+- **Odstępstwa od planu** (sekcja w `plan.md`): (1) `Api/appsettings*.json` utworzył człowiek — agent ma regułę odmowy odczytu, więc **nie zweryfikował ich treści**; proszę sprawdzić w diffie, że nie ma w nich klucza. (2) `timestamp` bez przesunięcia nie jest odrzucany (STJ przyjmuje czas lokalny serwera) mimo wymogu spec — do decyzji w temacie wysyłki z workera. (3) Commit `Api/` przed `Api.Tests/` (test-first w drzewie roboczym). (4) Klucz testowy losowy zamiast stałej (hook sekretów). (5) Nazwa klucza zmieniona na `DataAcquisition:Api:ApiKey` na prośbę człowieka — zmiana w zatwierdzonym `spec.md`. (7) `AuthenticationHandler` zamiast planowanego endpoint filtra (401 przed bindowaniem body). (8) Poprawki po review 1: `StrictStringEnumConverter` (R-01), spec `415` dla złego `Content-Type` (R-02). Treść `appsettings*.json` (zastrzeżenie z pkt 1) recenzent sprawdził w iteracji 1 — bez sekretów.
 - **`.claude/sdlc.json`** (commit `183930d`): `testCommand` dla bramki `Test-TopicReady` ustawiony przez człowieka; zmiana konfiguracji procesu, nie kodu tematu — odstępstwo 6 w `plan.md`. W tym samym odstępstwie: blok kodu w sekcji *Weryfikacja* planu zamieniony na listę, bo potrójne backticki psuły rozpoznawanie ścieżek w `Test-PlanCovers` (błąd narzędzia — do poprawy przez człowieka w `.claude/hooks/SdlcCommon.ps1`).
 - Warto spojrzeć na: `ApiKeyAuthenticationHandler` (kolejność względem bindowania, `provided.Count != 1` → brak uwierzytelnienia), `InMemoryObservationStore.AddAsync` (wyścig `TryAdd`/`TryGetValue` — wpływa tylko na log ostrzeżenia, nie na liczniki), sortowanie po `instanceId` (zakłada rosnące `instanceId` przy restartach agenta — w symulatorze to czas uniksowy).
 - `ApiFactory` używa `ConfigureAppConfiguration` + `UseEnvironment("Testing")`, żeby lokalne User Secrets i zmienne środowiskowe dewelopera nie wpływały na testy startu (User Secrets potwierdzone — testy zielone przy ustawionym sekrecie; przesłonięcie zmiennej środowiskowej wynika z kolejności źródeł konfiguracji, nie zostało osobno przetestowane).
