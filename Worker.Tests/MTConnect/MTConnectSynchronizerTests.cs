@@ -194,6 +194,36 @@ public sealed class MTConnectSynchronizerTests
     }
 
     [Fact]
+    public async Task StepAsync_OutOfRangeRightAfterResumeFromBuffer_FallsBackToNextSequenceInsteadOfLooping()
+    {
+        // Review R-04: if the agent writes more than the margin between /current and /sample, resuming from the
+        // buffer fails again; without a fallback the worker would loop OUT_OF_RANGE -> /current -> /sample.
+        await SyncAsync();
+        var outOfRange = new MTConnectAgentErrorException(MTConnectAgentErrorException.OutOfRange, "'from' outside buffer");
+        _agent.SampleThrows(outOfRange)
+            .Current(new StreamsDocument(new StreamsHeader(InstanceA, 231_072, 100_000, 231_071, 131_072), [Observation(231_000)]))
+            .SampleThrows(outOfRange)
+            .Current(new StreamsDocument(new StreamsHeader(InstanceA, 232_572, 101_500, 232_571, 131_072), [Observation(232_500)]))
+            .Sample(Streams(InstanceA, 232_573, 232_572, 232_572))
+            .SampleThrows(outOfRange)
+            .Current(new StreamsDocument(new StreamsHeader(InstanceA, 400_000, 268_928, 399_999, 131_072), [Observation(399_000)]))
+            .Sample(Streams(InstanceA, 269_929, 399_999, 269_928));
+
+        for (var i = 0; i < 6; i++)
+        {
+            await Step();
+        }
+
+        Assert.Equal(
+            ["sample?from=4&count=1000", "current", "sample?from=101000&count=1000", "current",
+             "sample?from=232572&count=1000", "sample?from=232573&count=1000", "current", "sample?from=269928&count=1000"],
+            _agent.Calls);
+        Assert.Equal(
+            [("4", "100999"), ("101000", "232571"), ("232573", "269927")],
+            Logs(LogLevel.Warning).Select(w => (w.GetStructuredStateValue("LostFrom"), w.GetStructuredStateValue("LostTo"))));
+    }
+
+    [Fact]
     public async Task StepAsync_OutOfRangeWithSmallFullBuffer_KeepsMarginWithinBuffer()
     {
         // Found in the manual run with --buffer 1000: a SampleCount (1000) margin equal to the whole buffer
