@@ -1,6 +1,6 @@
 # Spec: DA-004 — Wysylka obserwacji z workera do API
 
-Status: draft. Odpowiedzialny: nog_programista2. Data: 2026-11-04. Źródło: [intent](intent.md).
+Status: approved. Odpowiedzialny: nog_programista2. Data: 2026-11-04. Źródło: [intent](intent.md).
 
 ## Zachowanie
 
