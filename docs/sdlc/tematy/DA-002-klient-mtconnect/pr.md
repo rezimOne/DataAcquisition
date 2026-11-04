@@ -45,12 +45,13 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 14:44. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `ec8083f`**.
+Wygenerowano: 2026-11-04 14:44. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `f6855f7`**.
 
-Diff do review: `git diff 417e369 ec8083f` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 417e369 f6855f7` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (16)
+### Commity (17)
 
+- `f6855f7` DA-002: pr.md - dane automatyczne
 - `ec8083f` DA-002: verification.md i pr.md po R-04
 - `d83768a` DA-002: R-04 brak petli OUT_OF_RANGE po wznowieniu z bufora
 - `20da805` DA-002: test R-04 - OUT_OF_RANGE zaraz po wznowieniu z bufora nie moze zapetlic (czerwony)
