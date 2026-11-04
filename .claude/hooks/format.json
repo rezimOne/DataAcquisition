@@ -1,0 +1,14 @@
+{
+  "_opis": "Rozszerzenie -> komenda formattera jako lista argumentow, {file} = sciezka pliku. Pusta lista = wylaczone. Komenda musi byc szybka (uruchamiana po kazdej edycji). Plik zmienia tylko czlowiek (agent ma blokade).",
+  ".cs": [],
+  ".ts": [],
+  ".tsx": [],
+  ".js": [],
+  ".vue": [],
+  ".py": [],
+  "_przyklady": {
+    ".cs": ["dotnet", "format", "whitespace", "--include", "{file}"],
+    ".ts": ["npx", "--no-install", "prettier", "--write", "{file}"],
+    ".py": ["ruff", "format", "{file}"]
+  }
+}
