@@ -44,12 +44,13 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 12:59. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `62a493c`**.
+Wygenerowano: 2026-11-04 13:00. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `107bc20`**.
 
-Diff do review: `git diff 417e369 62a493c` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 417e369 107bc20` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (6)
+### Commity (7)
 
+- `107bc20` DA-002: pr.md - opis PR dla recenzenta
 - `62a493c` DA-002: verification.md (AC-01..AC-08 dla 96142b5), odstepstwo 5 w plan.md
 - `96142b5` DA-002: wykrywanie restartu agenta w synchronizacji (takze po OUT_OF_RANGE)
 - `3cb00ba` DA-002: test reprodukujacy - restart agenta wykryty przez OUT_OF_RANGE nie robi probe (czerwony)
