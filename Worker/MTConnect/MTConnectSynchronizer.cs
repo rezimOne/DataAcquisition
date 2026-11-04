@@ -91,9 +91,7 @@ public sealed class MTConnectSynchronizer(
 
         if (sample.Header.InstanceId != _instanceId)
         {
-            logger.LogInformation(
-                "MTConnect agent restarted (instance {OldInstanceId} -> {NewInstanceId}); resynchronizing.",
-                _instanceId, sample.Header.InstanceId);
+            // Restart is logged by SynchronizeAsync; probe first because the device model may have changed.
             _synchronized = false;
             _devices = null;
             await SynchronizeAsync(cancellationToken);
@@ -107,16 +105,22 @@ public sealed class MTConnectSynchronizer(
 
     private async Task SynchronizeAsync(CancellationToken cancellationToken)
     {
-        if (_devices is null)
-        {
-            _devices = await agent.ProbeAsync(cancellationToken);
-            _unknownDataItems.Clear();
-            logger.LogInformation(
-                "MTConnect agent {AgentUrl} (instance {InstanceId}): {DeviceCount} device(s), {DataItemCount} data items.",
-                _options.AgentUrl, _devices.InstanceId, _devices.DeviceNames.Count, _devices.DataItems.Count);
-        }
+        _devices ??= await ProbeAsync(cancellationToken);
 
         var current = await agent.CurrentAsync(cancellationToken);
+
+        // A restarted agent is often noticed only here: its sequences restart, so /sample?from=<old next>
+        // answers OUT_OF_RANGE instead of returning a document with the new instanceId.
+        if (_instanceId is { } previousInstanceId && current.Header.InstanceId != previousInstanceId)
+        {
+            logger.LogInformation(
+                "MTConnect agent restarted (instance {OldInstanceId} -> {NewInstanceId}); resynchronizing.",
+                previousInstanceId, current.Header.InstanceId);
+        }
+        if (current.Header.InstanceId != _devices.InstanceId)
+        {
+            _devices = await ProbeAsync(cancellationToken);
+        }
 
         if (_lostFromSequence is { } lostFrom && current.Header.InstanceId == _instanceId && lostFrom < current.Header.FirstSequence)
         {
@@ -134,6 +138,16 @@ public sealed class MTConnectSynchronizer(
         logger.LogInformation(
             "Synchronized with MTConnect agent instance {InstanceId} at sequence {NextSequence}.",
             _instanceId, _nextSequence);
+    }
+
+    private async Task<DevicesDocument> ProbeAsync(CancellationToken cancellationToken)
+    {
+        var devices = await agent.ProbeAsync(cancellationToken);
+        _unknownDataItems.Clear();
+        logger.LogInformation(
+            "MTConnect agent {AgentUrl} (instance {InstanceId}): {DeviceCount} device(s), {DataItemCount} data items.",
+            _options.AgentUrl, devices.InstanceId, devices.DeviceNames.Count, devices.DataItems.Count);
+        return devices;
     }
 
     private async Task DeliverAsync(StreamsDocument document, ObservationSource source, CancellationToken cancellationToken)
