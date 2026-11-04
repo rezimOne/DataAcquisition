@@ -60,4 +60,8 @@ Wymagania: .NET SDK 10. Bez bazy danych, bez zewnętrznych usług, bez prawdziwy
 ## Zgoda na zakres i odstępstwa
 
 - **Akceptacja planu**: zaakceptowano — nog_programista2, 2026-11-04
-- **Odstępstwa**: <zmiany planu w trakcie implementacji wraz z uzasadnieniem; aktualizuj w tym samym commicie co kod, którego dotyczą>.
+- **Odstępstwa**:
+  1. `Api/appsettings.json` i `Api/appsettings.Development.json` **nie zostały utworzone** — zapis zablokowany regułą uprawnień agenta (deny dla `appsettings*`). API działa na domyślnej konfiguracji (klucz i tak spoza `appsettings`); skutek: logi `Microsoft.AspNetCore` na poziomie `Information` (więcej szumu). Do uzupełnienia ręcznie przez człowieka (`Logging:LogLevel:Microsoft.AspNetCore = Warning`, `AllowedHosts = *`).
+  2. Wymóg spec „`timestamp` z przesunięciem” nie jest egzekwowany: `System.Text.Json` przyjmuje datę bez strefy jako czas lokalny serwera. Worker MTConnect wysyła czasy z `Z`, więc ryzyko jest niskie; wymuszenie (własny konwerter w `Contracts/`) — do decyzji w kolejnym temacie.
+  3. Test-first realizowany w drzewie roboczym (zaślepki `NotImplementedException` → testy czerwone 61/73 → implementacja → 73/73), a commity per krok planu, więc commit `Api/` poprzedza commit `Api.Tests/`.
+  4. Klucz API w testach generowany losowo w czasie wykonania zamiast stałej — hook skanu sekretów odrzucił literał.
