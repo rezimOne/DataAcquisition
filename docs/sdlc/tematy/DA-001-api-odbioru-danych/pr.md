@@ -37,7 +37,7 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 ## Uwagi dla recenzenta
 
 - **Odstępstwa od planu** (sekcja w `plan.md`): (1) `Api/appsettings*.json` utworzył człowiek — agent ma regułę odmowy odczytu, więc **nie zweryfikował ich treści**; proszę sprawdzić w diffie, że nie ma w nich klucza. (2) `timestamp` bez przesunięcia nie jest odrzucany (STJ przyjmuje czas lokalny serwera) mimo wymogu spec — do decyzji w temacie wysyłki z workera. (3) Commit `Api/` przed `Api.Tests/` (test-first w drzewie roboczym). (4) Klucz testowy losowy zamiast stałej (hook sekretów). (5) Nazwa klucza zmieniona na `DataAcquisition:Api:ApiKey` na prośbę człowieka — zmiana w zatwierdzonym `spec.md`.
-- **`.claude/sdlc.json` spoza planu** (commit `183930d`): `testCommand` dla bramki `Test-TopicReady` ustawiony przez człowieka; zmiana konfiguracji procesu, nie kodu tematu.
+- **`.claude/sdlc.json`** (commit `183930d`): `testCommand` dla bramki `Test-TopicReady` ustawiony przez człowieka; zmiana konfiguracji procesu, nie kodu tematu — odstępstwo 6 w `plan.md`. W tym samym odstępstwie: blok kodu w sekcji *Weryfikacja* planu zamieniony na listę, bo potrójne backticki psuły rozpoznawanie ścieżek w `Test-PlanCovers` (błąd narzędzia — do poprawy przez człowieka w `.claude/hooks/SdlcCommon.ps1`).
 - Warto spojrzeć na: `ApiKeyAuthenticationHandler` (kolejność względem bindowania, `provided.Count != 1` → brak uwierzytelnienia), `InMemoryObservationStore.AddAsync` (wyścig `TryAdd`/`TryGetValue` — wpływa tylko na log ostrzeżenia, nie na liczniki), sortowanie po `instanceId` (zakłada rosnące `instanceId` przy restartach agenta — w symulatorze to czas uniksowy).
 - `ApiFactory` używa `ConfigureAppConfiguration` + `UseEnvironment("Testing")`, żeby lokalne User Secrets i zmienne środowiskowe dewelopera nie wpływały na testy startu (User Secrets potwierdzone — testy zielone przy ustawionym sekrecie; przesłonięcie zmiennej środowiskowej wynika z kolejności źródeł konfiguracji, nie zostało osobno przetestowane).
 
@@ -46,12 +46,14 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 11:26. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `507e7be`**.
+Wygenerowano: 2026-11-04 11:29. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `ef5d564`**.
 
-Diff do review: `git diff 495a418 507e7be` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 495a418 ef5d564` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (9)
+### Commity (11)
 
+- `ef5d564` DA-001: plan.md - odstepstwo 6 (.claude/sdlc.json), lista komend zamiast bloku kodu
+- `19ed643` DA-001: pr.md - opis PR dla recenzenta
 - `507e7be` DA-001: verification.md - dowody dla d728000 (nazwa klucza, appsettings)
 - `d728000` DA-001: klucz API jako DataAcquisition:Api:ApiKey; appsettings API
 - `761c9e3` DA-001: verification.md - dowody AC-01..AC-08 dla 40df9fc
@@ -66,7 +68,7 @@ Diff do review: `git diff 495a418 507e7be` — pełna treść w `.claude/sdlc-tm
 
 | Zmiana | Plik | W planie? |
 |---|---|---|
-| M | `.claude/sdlc.json` | **NIE** |
+| M | `.claude/sdlc.json` | tak |
 | A | `Api.Tests/ApiFactory.cs` | tak |
 | A | `Api.Tests/DataAcquisition.Api.Tests.csproj` | tak |
 | A | `Api.Tests/HealthAndStartupTests.cs` | tak |
@@ -100,9 +102,7 @@ Diff do review: `git diff 495a418 507e7be` — pełna treść w `.claude/sdlc-tm
 | A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/spec.md` | dokumentacja |
 | A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/verification.md` | dokumentacja |
 
-Statystyka: 33 files changed, 1853 insertions(+), 5 deletions(-)
-
-> **1 plik(ów) spoza planu** — dopisz do plan.md (odstępstwo) albo usuń z gałęzi.
+Statystyka: 33 files changed, 1852 insertions(+), 5 deletions(-)
 
 ### Kryteria akceptacji
 
