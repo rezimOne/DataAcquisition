@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-made: MTConnect 2.0 namespace, not supported in DA-002. -->
+<MTConnectStreams xmlns="urn:mtconnect.org:MTConnectStreams:2.0">
+  <Header creationTime="2026-11-04T11:50:00.000Z" sender="other-agent" instanceId="1" version="2.0.0.0" bufferSize="1024" nextSequence="2" firstSequence="1" lastSequence="1"/>
+  <Streams>
+    <DeviceStream name="VMC5AX" uuid="MAZAK-SIM-001">
+      <ComponentStream component="Linear" name="X" componentId="x">
+        <Samples>
+          <Position dataItemId="xpos" timestamp="2026-11-04T11:50:00.000Z" sequence="1" subType="ACTUAL">1.0</Position>
+        </Samples>
+      </ComponentStream>
+    </DeviceStream>
+  </Streams>
+</MTConnectStreams>
