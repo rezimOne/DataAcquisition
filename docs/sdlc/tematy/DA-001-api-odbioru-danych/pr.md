@@ -46,12 +46,14 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 11:29. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `8344188`**.
+Wygenerowano: 2026-11-04 11:40. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `805917d`**.
 
-Diff do review: `git diff 495a418 8344188` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 495a418 805917d` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (12)
+### Commity (14)
 
+- `805917d` DA-001: poprawki po review 1 (R-02 spec 415, R-03 release.md, R-04 odstepstwo 7, verification d1d9f5d)
+- `d1d9f5d` DA-001: R-01 odrzucanie liczbowych wartosci enumow; R-02 test 415
 - `8344188` DA-001: pr.md - odswiezone dane automatyczne, odstepstwo 6
 - `ef5d564` DA-001: plan.md - odstepstwo 6 (.claude/sdlc.json), lista komend zamiast bloku kodu
 - `19ed643` DA-001: pr.md - opis PR dla recenzenta
@@ -95,6 +97,7 @@ Diff do review: `git diff 495a418 8344188` — pełna treść w `.claude/sdlc-tm
 | A | `Contracts/ObservationBatchRequest.cs` | tak |
 | A | `Contracts/ObservationCategory.cs` | tak |
 | A | `Contracts/ObservationResponses.cs` | tak |
+| A | `Contracts/StrictStringEnumConverter.cs` | tak |
 | M | `DataAcquisition.slnx` | tak |
 | M | `docs/sdlc/01-plan/BACKLOG.md` | dokumentacja |
 | A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/intent.md` | dokumentacja |
@@ -103,7 +106,7 @@ Diff do review: `git diff 495a418 8344188` — pełna treść w `.claude/sdlc-tm
 | A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/spec.md` | dokumentacja |
 | A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/verification.md` | dokumentacja |
 
-Statystyka: 33 files changed, 1852 insertions(+), 5 deletions(-)
+Statystyka: 34 files changed, 1978 insertions(+), 5 deletions(-)
 
 ### Kryteria akceptacji
 
