@@ -34,11 +34,9 @@ Kod pisany test-first w obrębie kroków 2–3 (testy walidatora i store przed i
 
 Komendy (kod 0 wymagany, output wklejany do `verification.md`):
 
-```bash
-dotnet build DataAcquisition.slnx
-dotnet test DataAcquisition.slnx
-dotnet format DataAcquisition.slnx --verify-no-changes
-```
+- `dotnet build DataAcquisition.slnx`
+- `dotnet test DataAcquisition.slnx`
+- `dotnet format DataAcquisition.slnx --verify-no-changes`
 
 | AC            | Dowód                                                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -66,3 +64,4 @@ Wymagania: .NET SDK 10. Bez bazy danych, bez zewnętrznych usług, bez prawdziwy
   3. Test-first realizowany w drzewie roboczym (zaślepki `NotImplementedException` → testy czerwone 61/73 → implementacja → 73/73), a commity per krok planu, więc commit `Api/` poprzedza commit `Api.Tests/`.
   4. Klucz API w testach generowany losowo w czasie wykonania zamiast stałej — hook skanu sekretów odrzucił literał.
   5. Nazwa klucza konfiguracji zmieniona z `ApiKey:Value` na `DataAcquisition:Api:ApiKey` (zmienna `DataAcquisition__Api__ApiKey`) na prośbę człowieka — nazwa ma jednoznacznie wskazywać projekt w User Secrets i zmiennych środowiskowych. Zmiana w `Api/ApiKey/`, `Api.Tests/` i `spec.md` (spec zatwierdzony — zmiana kontraktu konfiguracji za zgodą człowieka, 2026-11-04).
+  6. Gałąź zawiera zmianę `.claude/sdlc.json` (commit `183930d`, `testCommand` dla bramki `tools/Test-TopicReady.ps1`) — wprowadzoną przez człowieka zgodnie z sugestią z sekcji *Wydanie*; to konfiguracja procesu, nie kod tematu. Przy okazji blok kodu z komendami w sekcji *Weryfikacja* zamieniony na listę (treść bez zmian): potrójne backticki rozjeżdżały parowanie ścieżek w `Test-PlanCovers`, przez co plik nie był rozpoznawany jako objęty planem — błąd narzędzia do zgłoszenia człowiekowi (`tools/` i `.claude/hooks/` zmienia tylko człowiek).
