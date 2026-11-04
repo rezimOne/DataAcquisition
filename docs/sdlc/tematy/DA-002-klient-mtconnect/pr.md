@@ -15,7 +15,7 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 - `Worker/MTConnect/MTConnectClient.cs` — named `HttpClient` z `IHttpClientFactory` per żądanie (singleton synchronizatora nie trzyma jednego klienta); 404 z `MTConnectError` → `MTConnectAgentErrorException`, inne błędy HTTP → `HttpRequestException`; bez logów każdego żądania (`RemoveAllLoggers`).
 - `Worker/MTConnect/MTConnectOptions.cs` — `DataAcquisition:MTConnect:*` z domyślnymi wartościami w kodzie (symulator `http://localhost:5000`, 1 s, 1000, 10 s, 1 s → 30 s) i walidacją przy starcie (komunikat z pełnym kluczem).
 - `Worker/Worker.cs`, `Worker/Program.cs` — `BackgroundService` uruchamia synchronizator; rejestracja `AddMTConnect()`.
-- `Worker.Tests/` — fixtures XML z symulatora + przypadki ręczne; 54 testy (parser, klient z fałszywym handlerem, synchronizator z fałszywym agentem i `FakeTimeProvider`, host). Poprzednie 3 testy szkieletu zastąpione.
+- `Worker.Tests/` — fixtures XML z symulatora + przypadki ręczne; 55 testów (parser, klient z fałszywym handlerem, synchronizator z fałszywym agentem i `FakeTimeProvider`, host). Poprzednie 3 testy szkieletu zastąpione.
 
 ## Ryzyka i wpływ
 
@@ -27,18 +27,18 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 
 ## Jak testowano
 
-- `dotnet build` (0 ostrzeżeń), `dotnet test` (Worker.Tests 54/54, Api.Tests 82/82), `dotnet format --verify-no-changes` — kod 0 dla `6538cca`; `dotnet publish` z `release.md` — kod 0.
-- Test-first: parser 15/18 czerwonych na zaślepce, synchronizator 18/36; po review: 4/53 czerwone przed R-01, 3/54 przed poprawką `6538cca`.
+- `dotnet build` (0 ostrzeżeń), `dotnet test` (Worker.Tests 55/55, Api.Tests 82/82), `dotnet format --verify-no-changes` — kod 0 dla `d83768a`; `dotnet publish` z `release.md` — kod 0 (na `bf41614`).
+- Test-first: parser 15/18 czerwonych na zaślepce, synchronizator 18/36; po review: 4/53 czerwone przed R-01, 3/54 przed poprawką `6538cca`, 1/55 przed poprawką R-04 (`d83768a`).
 - **Test ręczny z symulatorem (AC-08)** wykrył błąd: po restarcie symulatora brak logu o restarcie i ponownego `/probe` (restart objawił się jako `OUT_OF_RANGE`). Test reprodukujący `3cb00ba` (czerwony) → poprawka `96142b5` → przebieg 2: 0 luk.
 - **Po review (R-01)** test ręczny z `--buffer 1000` i `PollInterval` 30 s wykrył 2 błędy pierwszej poprawki (czekanie po resync, zapas = cały bufor) → `6538cca`. Przebieg 5: po każdym `OUT_OF_RANGE` od razu 900 obserwacji z bufora, dokładny zakres luki, bez pętli. Przebieg 6 (restart): nowa instancja od sekwencji 1, 126 paczek, **0 luk**.
 - **Nie testowano**: realnego agenta (cppagent), `OUT_OF_RANGE` na pełnym buforze 131072 na żywo (tylko test jednostkowy), timeoutu i 5xx na żywo (tylko fałszywy handler/agent).
 
 ## Uwagi dla recenzenta
 
-- **Odstępstwa od planu** (`plan.md`): (1) named client zamiast typed client + `RemoveAllLoggers`; (2) `sample-empty.xml` ręczny (symulator za szybki, by złapać pusty `/sample`); (3) test-first tylko dla parsera i synchronizatora; (4) tempo symulatora ~100 obs./s (bufor ~22 min, nie ~17); (5) doprecyzowanie spec: wykrywanie restartu po `/current` niezależnie od ścieżki; (6) po review R-01: wznowienie z bufora agenta, `BufferSize` w `StreamsHeader`, zmienione oczekiwania 3 testów (w tym `from` w teście z `3cb00ba`); (7) 2 błędy pierwszej poprawki R-01 znalezione w teście ręcznym. Spec zaktualizowany (pkt 2.3–2.4, 3.3), `release.md` wypełniony (R-02).
+- **Odstępstwa od planu** (`plan.md`): (1) named client zamiast typed client + `RemoveAllLoggers`; (2) `sample-empty.xml` ręczny (symulator za szybki, by złapać pusty `/sample`); (3) test-first tylko dla parsera i synchronizatora; (4) tempo symulatora ~100 obs./s (bufor ~22 min, nie ~17); (5) doprecyzowanie spec: wykrywanie restartu po `/current` niezależnie od ścieżki; (6) po review R-01: wznowienie z bufora agenta, `BufferSize` w `StreamsHeader`, zmienione oczekiwania 3 testów (w tym `from` w teście z `3cb00ba`); (7) 2 błędy pierwszej poprawki R-01 znalezione w teście ręcznym; (8) R-04 z iteracji 2: brak pętli `OUT_OF_RANGE` po wznowieniu z bufora (liczba kroków w czerwonym teście `20da805` poprawiona przed poprawką kodu). Spec zaktualizowany (pkt 2.3–2.4, 3.3), `release.md` wypełniony (R-02).
 - Warto spojrzeć na: `MTConnectSynchronizer.SynchronizeAsync` (kolejność `/probe` ↔ `/current` przy restarcie wykrytym przez `OUT_OF_RANGE`: `/current` → `/probe`, a przy zmianie `instanceId` w `/sample`: `/probe` → `/current`), `StepAsync` (łapie wszystko poza anulowaniem przy zatrzymaniu — świadomie, by `BackgroundService` nie zatrzymał hosta), wzbogacanie typów z `/probe` (`Enrich`).
 - `NativeCode` (kod alarmu) jest w modelu workera, ale nie ma pola w kontrakcie API — decyzja w DA-003.
-- Commity: `2ffd2f2` (fixtures, model, parser), `c5cbe4a` (klient, synchronizator, rejestracja), `3cb00ba` (czerwony test regresji), `96142b5` (poprawka), `bf41614` (R-01–R-03), `6538cca` (poprawka R-01 po teście ręcznym).
+- Commity: `2ffd2f2` (fixtures, model, parser), `c5cbe4a` (klient, synchronizator, rejestracja), `3cb00ba` (czerwony test regresji), `96142b5` (poprawka), `bf41614` (R-01–R-03), `6538cca` (poprawka R-01 po teście ręcznym), `20da805` (czerwony test R-04), `d83768a` (poprawka R-04).
 
 ## Dane automatyczne
 

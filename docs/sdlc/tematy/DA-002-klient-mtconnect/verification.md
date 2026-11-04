@@ -1,6 +1,6 @@
 # Weryfikacja: DA-002
 
-Status: verified. Commit: 6538cca. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, runtime 10.0.12, Python 3.14.7 (symulator `resources/cnc_mtconnect_sim.py --seed 42`, 5 Hz); worker uruchomiony z `DOTNET_ENVIRONMENT=Development`, konfiguracja domyślna (`http://localhost:5000`). Bez sekretów. Data: 2026-11-04.
+Status: verified. Commit: d83768a. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, runtime 10.0.12, Python 3.14.7 (symulator `resources/cnc_mtconnect_sim.py --seed 42`, 5 Hz); worker uruchomiony z `DOTNET_ENVIRONMENT=Development`, konfiguracja domyślna (`http://localhost:5000`). Bez sekretów. Data: 2026-11-04.
 
 ## Wyniki testów vs Kryteria Odbioru
 
@@ -241,6 +241,34 @@ info | Synchronized with MTConnect agent instance 1793799371 at sequence 1.
 ```
 
 Po restarcie worker pobiera nową instancję od sekwencji 1 (wcześniej skakał do `nextSequence` i tracił dane zebrane od restartu); 0 luk.
+
+### Po review 2 (R-04)
+
+Test `StepAsync_OutOfRangeRightAfterResumeFromBuffer_FallsBackToNextSequenceInsteadOfLooping` (commit `20da805`, liczba kroków poprawiona przed poprawką kodu — patrz odstępstwo 8) na kodzie sprzed poprawki:
+
+```text
+  Failed DataAcquisition.Worker.Tests.MTConnect.MTConnectSynchronizerTests.StepAsync_OutOfRangeRightAfterResumeFromBuffer_FallsBackToNextSequenceInsteadOfLooping
+Expected: "sample?from=232572&count=1000"
+Actual:   "sample?from=102500&count=1000"
+Failed!  - Failed:     1, Passed:    54, Skipped:     0, Total:    55, Duration: 1 s - DataAcquisition.Worker.Tests.dll (net10.0)
+```
+
+Po poprawce, drzewo = `d83768a`:
+
+```text
+$ dotnet build DataAcquisition.slnx --nologo
+    0 Error(s)
+    0 Warning(s)
+BUILD_EXIT=0
+$ dotnet test DataAcquisition.slnx --nologo --no-build
+Passed!  - Failed:     0, Passed:    55, Skipped:     0, Total:    55, Duration: 1 s - DataAcquisition.Worker.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    82, Skipped:     0, Total:    82, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
+TEST_EXIT=0
+$ dotnet format DataAcquisition.slnx --verify-no-changes
+FORMAT_EXIT=0
+```
+
+Scenariusz R-04 nie był odtwarzany ręcznie (wymaga agenta, który między `/current` a `/sample` dopisze > 10% bufora) — tylko test jednostkowy.
 
 ## Pominięcia i ograniczenia
 
