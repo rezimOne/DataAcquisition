@@ -12,11 +12,14 @@ Worker ma dwa stany: **Niezsynchronizowany** i **Strumień** (`instanceId`, `nex
 2. **Synchronizacja**:
    1. `GET /probe` (przy starcie i po zmianie `instanceId`) → mapa `dataItemId` → (`category`, `type`, `subType`, `units`) i lista urządzeń; log `Information` (liczba urządzeń i dataItemów).
    2. `GET /current` → migawka ostatnich wartości. Obserwacje migawki są **przekazywane do odbiorcy** (decyzja PO), posortowane po `sequence`.
-   3. Zapamiętaj `Header/@instanceId` i `Header/@nextSequence` → stan **Strumień**.
+   3. Zapamiętaj `Header/@instanceId` i pozycję wznowienia → stan **Strumień**. Pozycja wznowienia (zmiana po review R-01, decyzja człowieka 2026-11-04):
+      - **pierwszy start workera**: `Header/@nextSequence` (start od „teraz”);
+      - **resynchronizacja** (po `OUT_OF_RANGE` lub restarcie agenta): to, co agent ma jeszcze w buforze — `Header/@firstSequence`; gdy bufor jest pełny (`lastSequence − firstSequence + 1 ≥ bufferSize`), `min(firstSequence + SampleCount, nextSequence)`, bo pełny bufor kołowy usuwa najstarszą obserwację przy każdej nowej i start dokładnie od `firstSequence` dałby kolejne `OUT_OF_RANGE`.
+      Migawka `/current` jest przekazywana zawsze; jej obserwacje mogą się powtórzyć w `/sample` z bufora (at-least-once).
 3. **Strumień** — w pętli:
    1. `GET /sample?from=<nextSequence>&count=<SampleCount>`.
    2. `Header/@instanceId` ≠ zapamiętany → log `Information` („agent restarted”), przejście do synchronizacji **z** `/probe` (model urządzenia mógł się zmienić). Obserwacje z tej odpowiedzi nie są przekazywane (pobierze je `/current`/`/sample` nowej instancji).
-   3. Odpowiedź `MTConnectError` z `errorCode="OUT_OF_RANGE"` (HTTP 404) → synchronizacja **bez** `/probe`; po `/current` log `Warning` z utraconym zakresem `[nextSequence_stare, firstSequence_nowe − 1]` (jeśli niepusty).
+   3. Odpowiedź `MTConnectError` z `errorCode="OUT_OF_RANGE"` (HTTP 404) → synchronizacja; `/probe` tylko, gdy `/current` pokaże inny `instanceId` (restart agenta — zwykle objawia się właśnie jako `OUT_OF_RANGE`, bo sekwencje nowej instancji są niższe). Przy tym samym `instanceId` log `Warning` z faktycznie utraconym zakresem `[nextSequence_stare, pozycja_wznowienia − 1]` (jeśli niepusty).
    4. W przeciwnym razie: obserwacje sortowane po `sequence` → przekazane do odbiorcy → `nextSequence = Header/@nextSequence`.
    5. **Doganianie**: jeśli `Header/@nextSequence ≤ Header/@lastSequence` (agent ma więcej danych niż zwrócił), kolejne żądanie idzie natychmiast; w przeciwnym razie czekamy `PollInterval`.
    6. Pusty `/sample` (brak `<Streams>` z obserwacjami) to nie błąd: odbiorca nie jest wołany, `nextSequence` bez zmian.

@@ -80,6 +80,7 @@ internal static class Docs
     public const string Device = "VMC5AX";
     public const long InstanceA = 1000;
     public const long InstanceB = 2000;
+    public const long BufferSize = 131072;
 
     public static DevicesDocument Devices(long instanceId = InstanceA) =>
         new(instanceId, [Device], new Dictionary<string, DataItemInfo>
@@ -92,7 +93,7 @@ internal static class Docs
         StreamsOf(instanceId, next, last, sequences.Select(s => Observation(s, instanceId)).ToArray());
 
     public static StreamsDocument StreamsOf(long instanceId, long next, long last, params MTConnectObservation[] observations) =>
-        new(new StreamsHeader(instanceId, next, 1, last), observations.OrderBy(o => o.Sequence).ToList());
+        new(new StreamsHeader(instanceId, next, 1, last, BufferSize), observations.OrderBy(o => o.Sequence).ToList());
 
     public static MTConnectObservation Observation(long sequence, long instanceId = InstanceA, string dataItemId = "xpos", string device = Device) =>
         new(device, instanceId, dataItemId, sequence, new DateTimeOffset(2026, 11, 4, 10, 0, 0, TimeSpan.Zero).AddMilliseconds(sequence),

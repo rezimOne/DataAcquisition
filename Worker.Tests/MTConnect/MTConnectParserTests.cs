@@ -23,7 +23,7 @@ public sealed class MTConnectParserTests
     {
         var streams = MTConnectParser.ParseStreams(Fixtures.Read("current.xml"));
 
-        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 388, 1, 387), streams.Header);
+        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 388, 1, 387, 131072), streams.Header);
         Assert.Equal(27, streams.Observations.Count);
         Assert.Equal(streams.Observations.Select(o => o.Sequence).Order(), streams.Observations.Select(o => o.Sequence));
         Assert.Equal(
@@ -38,7 +38,7 @@ public sealed class MTConnectParserTests
     {
         var streams = MTConnectParser.ParseStreams(Fixtures.Read("sample.xml"));
 
-        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 41, 1, 427), streams.Header);
+        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 41, 1, 427, 131072), streams.Header);
         Assert.Equal(Enumerable.Range(1, 40).Select(i => (long)i), streams.Observations.Select(o => o.Sequence));
         Assert.All(streams.Observations, o => Assert.Equal(TimeSpan.Zero, o.Timestamp.Offset));
     }
@@ -76,7 +76,7 @@ public sealed class MTConnectParserTests
     {
         var streams = MTConnectParser.ParseStreams(Fixtures.Read("sample-empty.xml"));
 
-        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 1568, 1, 1567), streams.Header);
+        Assert.Equal(new StreamsHeader(Fixtures.InstanceId, 1568, 1, 1567, 131072), streams.Header);
         Assert.Empty(streams.Observations);
     }
 

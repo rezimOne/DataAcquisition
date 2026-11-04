@@ -36,7 +36,11 @@ public sealed record MTConnectObservation(
     ConditionLevel? ConditionLevel,
     string? NativeCode);
 
-public sealed record StreamsHeader(long InstanceId, long NextSequence, long FirstSequence, long LastSequence);
+public sealed record StreamsHeader(long InstanceId, long NextSequence, long FirstSequence, long LastSequence, long BufferSize)
+{
+    /// <summary>Agent's circular buffer is full, so FirstSequence moves forward with every new observation.</summary>
+    public bool IsBufferFull => LastSequence - FirstSequence + 1 >= BufferSize;
+}
 
 /// <summary>MTConnectStreams document; observations sorted by sequence.</summary>
 public sealed record StreamsDocument(StreamsHeader Header, IReadOnlyList<MTConnectObservation> Observations);

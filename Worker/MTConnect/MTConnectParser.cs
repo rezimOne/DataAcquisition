@@ -41,7 +41,8 @@ internal static class MTConnectParser
             ParseLong(headerElement, "instanceId"),
             ParseLong(headerElement, "nextSequence"),
             ParseLong(headerElement, "firstSequence"),
-            ParseLong(headerElement, "lastSequence"));
+            ParseLong(headerElement, "lastSequence"),
+            ParseLong(headerElement, "bufferSize"));
 
         var observations = new List<MTConnectObservation>();
         foreach (var device in root.Descendants(StreamsNs + "DeviceStream"))

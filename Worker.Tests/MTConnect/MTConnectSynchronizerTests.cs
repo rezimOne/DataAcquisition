@@ -135,13 +135,15 @@ public sealed class MTConnectSynchronizerTests
         _agent.Sample(Streams(InstanceB, 50, 49, 48, 49))
             .Probe(Devices(InstanceB))
             .Current(Streams(InstanceB, 60, 59, 10, 59))
-            .Sample(Streams(InstanceB, 61, 60, 60));
+            .Sample(Streams(InstanceB, 3, 59, 1, 2));
 
         await Step();
-        await Step();
+        var catchUpDelay = await Step();
 
-        Assert.Equal(["sample?from=4&count=1000", "probe", "current", "sample?from=60&count=1000"], _agent.Calls);
-        Assert.Equal([10L, 59L, 60L], _sink.Sequences);
+        // New instance's buffer is not full: resume from its firstSequence, nothing collected since the restart is lost.
+        Assert.Equal(["sample?from=4&count=1000", "probe", "current", "sample?from=1&count=1000"], _agent.Calls);
+        Assert.Equal([10L, 59L, 1L, 2L], _sink.Sequences);
+        Assert.Equal(TimeSpan.Zero, catchUpDelay);
         Assert.All(_sink.Batches, b => Assert.Equal(InstanceB, b.InstanceId));
         Assert.Contains(Logs(LogLevel.Information), r => r.Message.Contains("restarted") && r.Message.Contains(InstanceB.ToString()));
     }
@@ -160,7 +162,7 @@ public sealed class MTConnectSynchronizerTests
         await Step();
         await Step();
 
-        Assert.Equal(["sample?from=6900&count=1000", "current", "probe", "sample?from=28&count=1000"], _agent.Calls);
+        Assert.Equal(["sample?from=6900&count=1000", "current", "probe", "sample?from=1&count=1000"], _agent.Calls);
         Assert.Equal([27L, 28L], _sink.Sequences);
         Assert.Contains(Logs(LogLevel.Information), r => r.Message.Contains("restarted") && r.Message.Contains(InstanceB.ToString()));
         Assert.Empty(Logs(LogLevel.Warning));
@@ -169,21 +171,42 @@ public sealed class MTConnectSynchronizerTests
     // AC-05
 
     [Fact]
-    public async Task StepAsync_OutOfRange_ResynchronizesWithoutProbeAndWarnsAboutLostRange()
+    public async Task StepAsync_OutOfRange_ResumesFromBufferWithMarginAndWarnsAboutExactLostRange()
     {
         await SyncAsync();
+        // Full buffer: firstSequence moves with every new observation, so resume SampleCount (1000) ahead of it.
+        var fullBuffer = new StreamsHeader(InstanceA, NextSequence: 231_072, FirstSequence: 100_000, LastSequence: 231_071, BufferSize: 131_072);
         _agent.SampleThrows(new MTConnectAgentErrorException(MTConnectAgentErrorException.OutOfRange, "'from' outside buffer"))
-            .Current(new StreamsDocument(new StreamsHeader(InstanceA, 201, 100, 200), [Observation(150)]))
-            .Sample(Streams(InstanceA, 202, 201, 201));
+            .Current(new StreamsDocument(fullBuffer, [Observation(231_000)]))
+            .Sample(Streams(InstanceA, 101_002, 231_071, 101_000, 101_001));
 
         await Step();
-        await Step();
+        var catchUpDelay = await Step();
 
-        Assert.Equal(["sample?from=4&count=1000", "current", "sample?from=201&count=1000"], _agent.Calls);
-        Assert.Equal([150L, 201L], _sink.Sequences);
+        Assert.Equal(["sample?from=4&count=1000", "current", "sample?from=101000&count=1000"], _agent.Calls);
+        Assert.Equal([231_000L, 101_000L, 101_001L], _sink.Sequences);
+        Assert.Equal(TimeSpan.Zero, catchUpDelay);
         var warning = Assert.Single(Logs(LogLevel.Warning));
-        Assert.Contains("4", warning.Message);
-        Assert.Contains("99", warning.Message);
+        Assert.Equal("4", warning.GetStructuredStateValue("LostFrom"));
+        Assert.Equal("100999", warning.GetStructuredStateValue("LostTo"));
+        Assert.Equal(InstanceA.ToString(), warning.GetStructuredStateValue("InstanceId"));
+    }
+
+    [Fact]
+    public async Task StepAsync_OutOfRangeWithNotFullBuffer_ResumesFromFirstSequence()
+    {
+        await SyncAsync();
+        var partialBuffer = new StreamsHeader(InstanceA, NextSequence: 5_000, FirstSequence: 100, LastSequence: 4_999, BufferSize: 131_072);
+        _agent.SampleThrows(new MTConnectAgentErrorException(MTConnectAgentErrorException.OutOfRange, "'from' outside buffer"))
+            .Current(new StreamsDocument(partialBuffer, [Observation(4_999)]))
+            .Sample(Streams(InstanceA, 102, 4_999, 100, 101));
+
+        await Step();
+        await Step();
+
+        Assert.Equal(["sample?from=4&count=1000", "current", "sample?from=100&count=1000"], _agent.Calls);
+        var warning = Assert.Single(Logs(LogLevel.Warning));
+        Assert.Equal(("4", "99"), (warning.GetStructuredStateValue("LostFrom"), warning.GetStructuredStateValue("LostTo")));
     }
 
     // AC-06

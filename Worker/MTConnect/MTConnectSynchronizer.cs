@@ -122,23 +122,35 @@ public sealed class MTConnectSynchronizer(
             _devices = await ProbeAsync(cancellationToken);
         }
 
-        if (_lostFromSequence is { } lostFrom && current.Header.InstanceId == _instanceId && lostFrom < current.Header.FirstSequence)
+        // First start: begin at "now". Resync (OUT_OF_RANGE or agent restart): continue with what the agent still buffers.
+        var resumeSequence = _instanceId is null ? current.Header.NextSequence : ResumeSequence(current.Header);
+
+        if (_lostFromSequence is { } lostFrom && current.Header.InstanceId == _instanceId && lostFrom < resumeSequence)
         {
             logger.LogWarning(
                 "Observations {LostFrom}-{LostTo} of instance {InstanceId} left the agent buffer before they were read and are lost.",
-                lostFrom, current.Header.FirstSequence - 1, current.Header.InstanceId);
+                lostFrom, resumeSequence - 1, current.Header.InstanceId);
         }
 
         await DeliverAsync(current, ObservationSource.Current, cancellationToken);
 
         _lostFromSequence = null;
         _instanceId = current.Header.InstanceId;
-        _nextSequence = current.Header.NextSequence;
+        _nextSequence = resumeSequence;
         _synchronized = true;
         logger.LogInformation(
             "Synchronized with MTConnect agent instance {InstanceId} at sequence {NextSequence}.",
             _instanceId, _nextSequence);
     }
+
+    /// <summary>
+    /// Oldest sequence worth requesting. A full buffer drops its oldest observation with every new one, so starting
+    /// exactly at FirstSequence would hit OUT_OF_RANGE again; keep a margin of one request (SampleCount).
+    /// </summary>
+    private long ResumeSequence(StreamsHeader header) =>
+        header.IsBufferFull
+            ? Math.Min(header.FirstSequence + _options.SampleCount, header.NextSequence)
+            : header.FirstSequence;
 
     private async Task<DevicesDocument> ProbeAsync(CancellationToken cancellationToken)
     {
