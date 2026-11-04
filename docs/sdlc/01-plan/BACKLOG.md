@@ -8,6 +8,7 @@ Wszystkie planowane, trwające i zakończone prace rozwojowe są ewidencjonowane
 
 | ID | Status | Priorytet | Skala | Tytuł i link do intencji | Odpowiedzialny | Warunek / Zależność |
 |---|---|---|---|---|---|---|
+| [DA-001](../tematy/DA-001-api-odbioru-danych/intent.md) | ready | P2 | M | API odbioru danych z maszyn | nog_programista2 | - |
 
 ---
 

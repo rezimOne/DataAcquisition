@@ -1,0 +1,54 @@
+# Review: DA-001 — API odbioru danych z maszyn
+
+Status: no-blocking-findings. Commit: 805917d. Baza: 495a418. Recenzent: sdlc-reviewer. Data: 2026-11-04.
+
+> Plik zapisuje wyłącznie recenzent (`/sdlc-review DA-001` lub `tools/Invoke-Review.ps1 -Id DA-001`) — autor zmian ma blokadę zapisu. Człowiek może ręcznie zmienić status uwagi na `odrzucona` z uzasadnieniem.
+> Statusy: not-run → changes-requested / no-blocking-findings. `Commit` = przejrzany commit; po każdej zmianie kodu review trzeba powtórzyć.
+> Uwagi są doradcze: recenzent nie zatwierdza zmian — decyzję podejmuje człowiek w `pr.md`.
+
+## Uwagi
+
+| ID | Priorytet | Plik:linia | Scenariusz i uzasadnienie | Status |
+|---|---|---|---|---|
+| R-01 | P2 | `Api/Observations/ObservationBatchValidator.cs:61`, `:78`; `Contracts/ObservationCategory.cs:7`; `Contracts/ConditionLevel.cs:6` | `JsonStringEnumConverter<T>()` domyślnie ma `AllowIntegerValues = true` i nie sprawdza `Enum.IsDefined`. Worker (lub inny klient z kluczem) wysyła `{"category": 7, ...}` albo `{"category":"Condition","conditionLevel": 42}`. Deserializacja się udaje, walidator sprawdza tylko `Category is null`, a reguła `conditionLevel` (linie 78–86) nie obejmuje kategorii spoza `Sample`/`Event`/`Condition`, więc obserwacja z `category = 7` przechodzi bez żadnego sprawdzenia `conditionLevel`. Wynik: `200`, rekord zapisany, a GET zwraca `"category":7` / `"conditionLevel":42` jako liczby — wbrew spec („enum `Sample`/`Event`/`Condition` — jedna z wartości”, „enumy jako stringi”) i intent („odrzuca dane niepoprawne”). Test `Post_MalformedJson_…("Bogus")` pokrywa tylko niepoprawny string, nie liczbę. Poprawka: `Enum.IsDefined` dla `Category` i `ConditionLevel` w walidatorze (błąd pod `observations[i].category` / `.conditionLevel`) i/lub `allowIntegerValues: false` w konwerterach w `Contracts/`; dodać test integracyjny i jednostkowy dla wartości liczbowej. **Iteracja 2:** naprawione — `Contracts/StrictStringEnumConverter.cs` (`allowIntegerValues: false`) na obu enumach, `Enum.IsDefined` dla `category` i `conditionLevel` w walidatorze (`ObservationBatchValidator.cs:65–68`, `:91–94`); testy `Post_NumericEnumValue_Returns400AndStoresNothing` (5 przypadków, w tym `"7"` i wartości mieszczące się w zakresie enuma: `0`, `1`), `Validate_UndefinedCategory_…`, `Validate_UndefinedConditionLevel_…`; przebieg czerwony 7/82 przed poprawką i zielony 82/82 po niej w `verification.md`. | naprawiona |
+| R-02 | P3 | `Api/Observations/ObservationEndpoints.cs:16` | Spec, *Zapis* pkt 7: „Niepoprawny JSON / zły `Content-Type` → `400` (`ProblemDetails`)”. Minimal API (ASP.NET Core 7+) przy parametrze body wnioskowanym z JSON zwraca dla `Content-Type: text/plain` lub braku nagłówka `415 Unsupported Media Type`, nie `400`. Scenariusz: worker w kolejnym temacie wysyła treść bez `application/json` i — zgodnie ze spec — obsługuje `400` jako „paczka do poprawy”, a dostaje `415`, którego nie przewidział. Brak testu dla złego `Content-Type`, więc rozbieżność nie jest widoczna w `verification.md`. Proponowane: dodać test i albo zaktualizować spec na `415` (zachowanie bardziej poprawne semantycznie), albo świadomie mapować na `400`. **Iteracja 2:** naprawione — spec pkt 7 zmieniony na `415` (decyzja człowieka, odstępstwo 8), test `Post_NonJsonContentType_Returns415AndStoresNothing` (`text/plain`, brak nagłówka) sprawdza `415`, `application/problem+json` i brak zapisu. | naprawiona |
+| R-03 | P3 | `docs/sdlc/tematy/DA-001-api-odbioru-danych/release.md:12` | `release.md` jest niewypełnionym szablonem (`Commit: 495a418`, placeholdery), mimo że zmiana wprowadza nową wymaganą konfigurację `DataAcquisition__Api__ApiKey` (min. 32 znaki), bez której proces nie startuje. REVIEW.md, filar 5, wymaga instrukcji konfiguracji nowych zmiennych w `release.md`. Scenariusz: osoba uruchamiająca API na innym środowisku czyta `release.md`, nie znajduje zmiennej, start kończy się `OptionsValidationException`. Skutek łagodzi fail-fast z czytelnym komunikatem i opis w `plan.md` (*Wydanie*), stąd P3. Wdrożenie jest poza zakresem tematu — wystarczy sekcja konfiguracji i rollbacku przeniesiona z planu. **Iteracja 2:** naprawione — `release.md` ma tabelę *Wymagana konfiguracja* (`DataAcquisition__Api__ApiKey`, `ASPNETCORE_URLS`, `ASPNETCORE_ENVIRONMENT`), komendę `dotnet publish` (sprawdzoną w `verification.md`, `publish/` jest w `.gitignore`), rollback i monitoring; kroki wdrożenia jawnie pozostawione release managerowi. | naprawiona |
+| R-04 | P3 | `docs/sdlc/tematy/DA-001-api-odbioru-danych/plan.md:15` | Plan (krok 2) przewiduje `ApiKey/ApiKeyEndpointFilter.cs` (endpoint filter), a implementacja to `ApiKey/ApiKeyAuthenticationHandler.cs` + `ApiKey/ApiKeyServiceCollectionExtensions.cs` (schemat uwierzytelniania + `RequireAuthorization`). Zmiana jest uzasadniona (401 przed bindowaniem body — test `Post_WithoutApiKeyAndInvalidBody_Returns401NotValidationError`) i opisana w `pr.md`, ale nie w sekcji *Odstępstwa* planu, czego wymaga CLAUDE.md pkt 2. Hook pozwolił na edycję, bo plan dopuszcza cały katalog `Api/`, więc rozbieżność nie zostanie wychwycona automatycznie. Scenariusz: w kolejnym temacie (klient API w workerze) ktoś opiera się na planie DA-001 i szuka filtra, którego nie ma. Proponowane: dopisać odstępstwo 7. **Iteracja 2:** naprawione — odstępstwo 7 w `plan.md` z uzasadnieniem i wskazaniem testu. | naprawiona |
+| R-05 | P3 | `docs/sdlc/tematy/DA-001-api-odbioru-danych/pr.md:19`, `:32–33`, `:39` | Część opisowa `pr.md` nie została odświeżona po poprawkach z iteracji 1: podaje „73 testy”, „Api.Tests 73/73 … (stan `d728000`)” i wymienia odstępstwa 1–6, podczas gdy przejrzany kod (`d1d9f5d`/`805917d`) ma 82 testy Api (`verification.md`: 82/82), odstępstwa 7–8 oraz zmianę spec (`415`). Sekcja *Dane automatyczne* jest aktualna (HEAD `805917d`). Scenariusz: człowiek podejmujący decyzję w `pr.md` czyta tylko opis i nie widzi, że po review doszedł nowy plik `Contracts/StrictStringEnumConverter.cs` i zmieniony kontrakt błędu dla złego `Content-Type`. Skutek tylko dokumentacyjny — rzetelne dane są w `verification.md` i `plan.md`. Proponowane: zaktualizować *Najważniejsze zmiany*, *Jak testowano* i *Uwagi dla recenzenta*. | otwarta |
+
+## Zgodność z planem
+
+- Wszystkie pliki spoza `docs/` mieszczą się w zakresie planu: `Contracts/`, `Api/`, `Api.Tests/` (katalogi dozwolone), `DataAcquisition.slnx` (krok 4), `.claude/sdlc.json` (zmiana człowieka, odstępstwo 6). Tabela *Zmienione pliki* w `pr.md` nie zawiera pozycji **NIE**.
+- Nowy plik `Contracts/StrictStringEnumConverter.cs` mieści się w kroku 1 (`Contracts/`) i jest opisany w odstępstwie 8; zmiana spec (`415`) opisana w odstępstwie 8 i w samym `spec.md` (pkt 7) z adnotacją o decyzji człowieka.
+- Zmiana mechanizmu uwierzytelniania opisana jako odstępstwo 7 (R-04 naprawiona).
+- Odstępstwo 2 (`timestamp` bez przesunięcia przyjmowany jako czas lokalny serwera) pozostaje świadomym odejściem od zatwierdzonej spec, przekazanym do decyzji człowieka w `pr.md` — bez zmian względem iteracji 1; nie dublujemy go jako uwagi.
+- Tryb: `feature` — kontrola niezmienności testu reprodukującego nie dotyczy.
+
+## Pokrycie kryteriów akceptacji
+
+| AC | Test / dowód w verification.md | Ocena recenzenta |
+|---|---|---|
+| AC-01 | `dotnet build` / `dotnet test` / `dotnet format` z kodem 0 dla drzewa `d1d9f5d` (Api.Tests 82/82, Worker.Tests 3/3); `DataAcquisition.slnx` zawiera 3 nowe projekty (diff) | pokryte |
+| AC-02 | `Post_ValidBatchWithSampleAndCondition_AcceptsAndReturnsFromQuery` (porównanie rekordów 1:1, konwersja +02:00 → UTC), `Post_ValidBatch_UsesCamelCaseAndStringEnumsOnWire` (potwierdza, że `StrictStringEnumConverter` nadal zapisuje nazwy); test ręczny curl | pokryte |
+| AC-03 | `Post_WithoutApiKey_…`, `Post_WithInvalidApiKey_…` (oba sprawdzają brak zapisu), `Post_WithoutApiKeyAndInvalidBody_…`, `Get_WithoutApiKey_Returns401` | pokryte |
+| AC-04 | `Post_InvalidBatch_…` (8 przypadków ze spec), `Post_MoreThanMaxBatchSize_…`, `Post_InvalidObservationField_ErrorKeyPointsToField`, `Post_MalformedJson_…`, `Post_NumericEnumValue_…` (5), `Post_NonJsonContentType_Returns415…` (2) + testy walidatora (w tym `Validate_Undefined*`) | pokryte; luki z iteracji 1 (R-01, R-02) zamknięte |
+| AC-05 | `Post_SameBatchTwice_…`, `Post_OverlappingBatch_…`, `Post_ParallelIdenticalBatches_…` (4 × 200), `AddAsync_ConcurrentIdenticalBatches_…` (8 × 500) | pokryte |
+| AC-06 | `Get_FilterByDeviceTimeRangeAndLimit_…` (2 urządzenia, 2 instancje, `[from, to)`, `limit=2`, `truncated`), `Get_InvalidParameters_…` (5 przypadków), `Get_UnknownDevice_…`, `QueryAsync_*` | pokryte |
+| AC-07 | `GetHealth_WithoutApiKey_Returns200Healthy`; test ręczny | pokryte |
+| AC-08 | `Startup_MissingOrTooShortApiKey_…` (null, pusty, 31 znaków; komunikat bez wartości), `Startup_ApiKeyOfMinimumLength_Starts`, `Requests_WithValidAndInvalidKeys_NeverLogKeyValues`, `AddAsync_DuplicateWithDifferentContent_LogsWarningWithoutValue`; test ręczny `grep` = 0 | pokryte; zastrzeżenie dot. `Api/appsettings*.json` zamknięte przez recenzenta — patrz niżej |
+
+## Dowody weryfikacji
+
+- `verification.md` (`Commit: d1d9f5d`) zawiera rzeczywiste outputy po poprawkach: `BUILD_EXIT=0`, `TEST_EXIT=0` (Api.Tests 82/82, Worker.Tests 3/3), `FORMAT_EXIT=0`, `PUBLISH_EXIT=0`, imienną listę 9 nowych testów oraz przebieg czerwony 7/82 przed poprawką R-01 (test-first). Odnotowano uczciwie, że test `415` przechodził już przed poprawką (zachowanie frameworka, R-02 rozwiązane zmianą spec).
+- Przejrzany commit `805917d` według opisu commita i treści diffu zmienia po `d1d9f5d` wyłącznie dokumenty tematu (`spec.md`, `release.md`, `plan.md`, `verification.md`) — dowody z `d1d9f5d` uznaję za aktualne dla kodu w `805917d`. Recenzent nie ma powłoki i nie porównał drzew bezpośrednio; bramka `Test-TopicReady` (z `testCommand` w `.claude/sdlc.json`) uruchomi testy ponownie przed pushem. Commit `69160cf` (nowszy niż HEAD w `pr.md`) zmienia tylko `pr.md`.
+- Lista testów sprzed poprawek pochodzi z `40df9fc` (73), a 9 nowych wymieniono osobno — razem 82, zgodnie z podsumowaniem przebiegu.
+- **Zastrzeżenie AC-08 (`Api/appsettings*.json`)**: recenzent ponownie przeczytał oba pliki w diffie — zawierają wyłącznie `Logging:LogLevel` i `AllowedHosts`; brak klucza `DataAcquisition:Api:ApiKey` ani innych sekretów.
+- W diffie brak literałów kluczy: `ApiFactory.TestApiKey` losowany w czasie wykonania, w testach jawnie fikcyjne wartości.
+- Pominięcia w `verification.md` (brak testu `timestamp` bez strefy — odstępstwo 2, brak testów obciążeniowych, brak integracji z workerem, HTTP bez TLS) są wyjaśnione i zgodne z zakresem.
+
+## Historia iteracji
+
+| Iteracja | Commit | Data | Wynik |
+|---|---|---|---|
+| 1 | 8344188 | 2026-11-04 | changes-requested: P1 0, P2 1, P3 3 |
+| 2 | 805917d | 2026-11-04 | no-blocking-findings: R-01..R-04 naprawione; otwarte P1 0, P2 0, P3 1 (R-05) |

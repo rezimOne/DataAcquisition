@@ -1,10 +1,25 @@
 {
   "_opis": "Konfiguracja bramek SDLC. baseBranch - galaz docelowa PR. testCommand - pelna komenda testow jako lista argumentow (uruchamiana przez tools/Test-TopicReady.ps1 przed pushem). Plik zmienia tylko czlowiek.",
   "baseBranch": "main",
-  "testCommand": [],
+  "testCommand": [
+    "dotnet",
+    "test",
+    "DataAcquisition.slnx",
+    "--nologo"
+  ],
   "_przyklady": {
-    "dotnet": ["dotnet", "test", "--nologo"],
-    "node": ["npm", "test"],
-    "python": ["pytest", "-q"]
+    "dotnet": [
+      "dotnet",
+      "test",
+      "--nologo"
+    ],
+    "node": [
+      "npm",
+      "test"
+    ],
+    "python": [
+      "pytest",
+      "-q"
+    ]
   }
 }
