@@ -209,7 +209,7 @@ public sealed class MTConnectSynchronizerTests
             .Current(new StreamsDocument(new StreamsHeader(InstanceA, 400_000, 268_928, 399_999, 131_072), [Observation(399_000)]))
             .Sample(Streams(InstanceA, 269_929, 399_999, 269_928));
 
-        for (var i = 0; i < 6; i++)
+        for (var i = 0; i < 5; i++)
         {
             await Step();
         }

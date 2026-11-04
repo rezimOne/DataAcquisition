@@ -16,6 +16,7 @@ Worker ma dwa stany: **Niezsynchronizowany** i **Strumień** (`instanceId`, `nex
       - **pierwszy start workera**: `Header/@nextSequence` (start od „teraz”);
       - **resynchronizacja** (po `OUT_OF_RANGE` lub restarcie agenta): to, co agent ma jeszcze w buforze — `Header/@firstSequence`; gdy bufor jest pełny (`lastSequence − firstSequence + 1 ≥ bufferSize`), `min(firstSequence + min(SampleCount, bufferSize / 10), nextSequence)`, bo pełny bufor kołowy usuwa najstarszą obserwację przy każdej nowej i start dokładnie od `firstSequence` dałby kolejne `OUT_OF_RANGE`.
       Migawka `/current` jest przekazywana zawsze; jej obserwacje mogą się powtórzyć w `/sample` z bufora (at-least-once).
+      Wyjątek (review R-04): jeśli `OUT_OF_RANGE` przyjdzie na pierwsze `/sample` po wznowieniu z bufora (agent dopisał więcej niż zapas), kolejna synchronizacja wznawia od `Header/@nextSequence` — zapobiega pętli `OUT_OF_RANGE` → `/current` → `/sample` bez opóźnienia; utracony zakres jest logowany.
    4. Po synchronizacji pierwsze `/sample` idzie **od razu** (bez `PollInterval`) — po resynchronizacji dane z bufora mogą zaraz z niego wypaść.
 3. **Strumień** — w pętli:
    1. `GET /sample?from=<nextSequence>&count=<SampleCount>`.

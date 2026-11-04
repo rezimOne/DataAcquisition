@@ -22,6 +22,8 @@ public sealed class MTConnectSynchronizer(
     private long? _instanceId;
     private long _nextSequence;
     private long? _lostFromSequence;
+    private bool _resumedFromBuffer;
+    private bool _skipBufferOnResync;
     private TimeSpan? _retryDelay;
 
     public async Task RunAsync(CancellationToken stoppingToken)
@@ -84,6 +86,8 @@ public sealed class MTConnectSynchronizer(
         catch (MTConnectAgentErrorException ex) when (ex.ErrorCode == MTConnectAgentErrorException.OutOfRange)
         {
             _lostFromSequence ??= _nextSequence;
+            // The buffer moved faster than the margin: resuming from it again would loop, so jump to "now".
+            _skipBufferOnResync = _resumedFromBuffer;
             _synchronized = false;
             await SynchronizeAsync(cancellationToken);
             return TimeSpan.Zero;
@@ -100,6 +104,7 @@ public sealed class MTConnectSynchronizer(
 
         await DeliverAsync(sample, ObservationSource.Sample, cancellationToken);
         _nextSequence = sample.Header.NextSequence;
+        _resumedFromBuffer = false;
         return sample.Header.NextSequence <= sample.Header.LastSequence ? TimeSpan.Zero : _options.PollInterval;
     }
 
@@ -122,8 +127,11 @@ public sealed class MTConnectSynchronizer(
             _devices = await ProbeAsync(cancellationToken);
         }
 
-        // First start: begin at "now". Resync (OUT_OF_RANGE or agent restart): continue with what the agent still buffers.
-        var resumeSequence = _instanceId is null ? current.Header.NextSequence : ResumeSequence(current.Header);
+        // First start: begin at "now". Resync (OUT_OF_RANGE or agent restart): continue with what the agent still buffers,
+        // unless that just failed (_skipBufferOnResync).
+        var resumeSequence = _instanceId is null || _skipBufferOnResync
+            ? current.Header.NextSequence
+            : ResumeSequence(current.Header);
 
         if (_lostFromSequence is { } lostFrom && current.Header.InstanceId == _instanceId && lostFrom < resumeSequence)
         {
@@ -135,6 +143,8 @@ public sealed class MTConnectSynchronizer(
         await DeliverAsync(current, ObservationSource.Current, cancellationToken);
 
         _lostFromSequence = null;
+        _skipBufferOnResync = false;
+        _resumedFromBuffer = resumeSequence < current.Header.NextSequence;
         _instanceId = current.Header.InstanceId;
         _nextSequence = resumeSequence;
         _synchronized = true;
