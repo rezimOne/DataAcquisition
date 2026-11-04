@@ -1,6 +1,6 @@
 # Plan: DA-001 — API odbioru danych z maszyn
 
-Status: approved. Tryb: feature. Baza: 495a418. Odpowiedzialny: nog_programista2. Źródło: [spec](spec.md).
+Status: done. Tryb: feature. Baza: 495a418. Odpowiedzialny: nog_programista2. Źródło: [spec](spec.md).
 
 > Cykl statusu: draft → approved → done. Status approved nadaje wyłącznie człowiek (hook blokuje agenta). Tylko przy statusie approved hook pozwala edytować pliki wymienione w tabeli poniżej — ścieżki względem korzenia repozytorium, w backtickach; dozwolony katalog zakończony ukośnikiem lub wzorzec z gwiazdką (nie może zaczynać się od gwiazdki).
 > Tryb fix — testy zacommitowane w HEAD są zablokowane do edycji: najpierw commit z czerwonym testem, potem poprawka bez zmiany testu.

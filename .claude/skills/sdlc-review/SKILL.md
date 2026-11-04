@@ -19,8 +19,15 @@ Argument: `$ARGUMENTS` (ID tematu, np. `PROJ-001`; puste = temat z bieżącej ga
 
 3. Po zakończeniu przeczytaj `docs/sdlc/tematy/<ID>-<nazwa>/review.md` i pokaż użytkownikowi: status, przejrzany commit, otwarte uwagi P1/P2 (ID, plik:linia, jedno zdanie), liczbę P3.
 
-4. Zakończ informacją o następnym kroku:
+4. Zacommituj **wyłącznie** dokumenty review na gałęzi tematu (bramka przed pushem wymaga czystego drzewa):
+
+   ```bash
+   git add docs/sdlc/tematy/<ID>-<nazwa>/pr.md docs/sdlc/tematy/<ID>-<nazwa>/review.md
+   git commit -m "<ID>: review <commit>" -- docs/sdlc/tematy/<ID>-<nazwa>/pr.md docs/sdlc/tematy/<ID>-<nazwa>/review.md
+   ```
+
+5. Zakończ informacją o następnym kroku:
    - są otwarte P1/P2 → „popraw uwagi, zacommituj i uruchom /sdlc-review ponownie”;
-   - brak otwartych P1/P2 → „przeczytaj review.md; akceptację wpisuje człowiek w pr.md (Status: approved), potem `tools/Test-TopicReady.ps1` i `git push`”.
+   - brak otwartych P1/P2 → „przeczytaj review.md; w jednym commicie człowiek ustawia `Status: approved` w pr.md (z osobą i datą) i `Status: done` w plan.md, potem `tools/Test-TopicReady.ps1` i `git push`”.
 
 Nie zmieniaj statusów w `pr.md`, nie pushuj i nie merguj.

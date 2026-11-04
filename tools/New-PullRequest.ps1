@@ -6,8 +6,9 @@ param(
 )
 
 # Odświeża sekcję automatyczną w docs/sdlc/tematy/<ID>/pr.md (commity, pliki vs plan,
-# statystyka, AC vs verification) i zapisuje pełny diff dla recenzenta poza repozytorium
-# śledzonym przez git (.git/sdlc/<ID>.diff). Nie zmienia statusu PR ani sekcji opisowych.
+# statystyka, AC vs verification) i zapisuje pełny diff dla recenzenta w pliku lokalnym
+# nieśledzonym przez git (.claude/sdlc-tmp/<ID>-<nazwa>.diff, wykluczony w info/exclude).
+# Nie zmienia statusu PR ani sekcji opisowych.
 
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
@@ -81,7 +82,7 @@ foreach ($line in $changes) {
     $cols = $line -split "`t"
     $kind = $cols[0].Substring(0, 1)
     $file = $cols[-1]
-    $inPlan = if ($file -match '^docs/' -or $file -match '^(CLAUDE|AGENTS|REVIEW|README)\.md$') { "dokumentacja" }
+    $inPlan = if (Test-FreePath $file) { "dokumentacja" }
               elseif (Test-PlanCovers $planText $file) { "tak" }
               else { $outOfPlan++; "**NIE**" }
     [void]$sb.AppendLine("| $kind | ``$file`` | $inPlan |")

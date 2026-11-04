@@ -8,7 +8,7 @@ Status: not-released. Commit: <SHA>. Wersja paczki / tag: <wersja>. Środowisko 
 
 ## Wymagania wstępne i dowody przed wdrożeniem
 
-- [ ] Dowody z `verification.md` zatwierdzone.
+- [ ] PR zaakceptowany (`pr.md`: approved), bramki `Test-TopicReady` = GO, zmiana scalona do gałęzi bazowej na zdalnym repozytorium.
 - [ ] Kopia zapasowa bazy danych / stanu wykonana.
 - [ ] Zmienne środowiskowe i klucze skonfigurowane w środowisku docelowym.
 

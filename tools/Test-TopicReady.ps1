@@ -62,10 +62,17 @@ $topicRel = "docs/sdlc/tematy/$topicName"
 $script:label = "$topicName (gałąź $Branch)"
 
 Add-Check "Gałąź" ($current -eq $Branch) $(if ($current -eq $Branch) { "sprawdzana gałąź jest wybrana" } else { "wypychana gałąź '$Branch' różni się od bieżącej '$current' - przełącz się na nią" })
-$dirty = @(Invoke-Git @('-C', $root, 'status', '--porcelain') | Where-Object { $_ })
-Add-Check "Drzewo robocze" ($dirty.Count -eq 0) $(if ($dirty.Count -eq 0) { "czyste" } else { "$($dirty.Count) niezacommitowanych zmian" })
+$dirty = @(Invoke-Git @('-C', $root, '-c', 'core.quotepath=off', 'status', '--porcelain') | Where-Object { $_ })
+$dirtyDetail = "czyste"
+if ($dirty.Count -gt 0) {
+    $dirtyPaths = @($dirty | ForEach-Object { $_.Substring(3).Trim('"') })
+    $onlyTopicDocs = @($dirtyPaths | Where-Object { -not $_.StartsWith("$topicRel/") }).Count -eq 0
+    $dirtyDetail = if ($onlyTopicDocs) {
+        "niezacommitowane dokumenty tematu ($(($dirtyPaths | ForEach-Object { Split-Path -Leaf $_ }) -join ', ')) - zacommituj je: git add $topicRel; git commit"
+    } else { "$($dirty.Count) niezacommitowanych zmian" }
+}
+Add-Check "Drzewo robocze" ($dirty.Count -eq 0) $dirtyDetail
 
-$head = ([string](Invoke-Git @('-C', $root, 'rev-parse', 'HEAD'))).Trim()
 $base = $config.baseBranch
 $mergeBase = $null
 if (Invoke-Git @('-C', $root, 'rev-parse', '--verify', '--quiet', "$base^{commit}")) {
@@ -99,13 +106,18 @@ $planOk = $planStatus -in @('approved', 'done')
 $scopeDetail = "status planu: $planStatus"
 if ($planOk -and $mergeBase) {
     $files = @(Invoke-Git @('-C', $root, '-c', 'core.quotepath=off', 'diff', '--name-only', $mergeBase, 'HEAD') | Where-Object { $_ })
-    $outside = @($files | Where-Object { $_ -notmatch '^docs/' -and $_ -notmatch '^(CLAUDE|AGENTS|REVIEW|README)\.md$' -and -not (Test-PlanCovers $plan $_) })
+    $outside = @($files | Where-Object { -not (Test-FreePath $_) -and -not (Test-PlanCovers $plan $_) })
     if ($outside.Count -gt 0) { $planOk = $false; $scopeDetail = "pliki spoza planu: $(($outside | Select-Object -First 3) -join ', ')$(if ($outside.Count -gt 3) { ' ...' })" }
     else { $scopeDetail = "plan $planStatus, $($files.Count) zmienionych plików w zakresie" }
 } elseif (-not $mergeBase) {
     $planOk = $false; $scopeDetail = "gałąź bazowa '$base' nie istnieje (baseBranch w .claude/sdlc.json)"
 }
 Add-Check "Plan i zakres" $planOk $scopeDetail
+
+# Plan zamknięty przed wypchnięciem: po merge zatwierdzony plan w gałęzi bazowej
+# autoryzowałby edycję swoich plików w innych tematach. Człowiek ustawia "Status: done"
+# w tym samym commicie co akceptację pr.md.
+Add-Check "Zamknięcie planu" ($planStatus -eq 'done') $(if ($planStatus -eq 'done') { "plan.md: done" } else { "plan.md: $planStatus - przy akceptacji PR ustaw w plan.md 'Status: done' (ten sam commit co akceptacja pr.md)" })
 
 # --- Weryfikacja -----------------------------------------------------------------
 $ver = Read-TopicDoc 'verification.md'
@@ -132,6 +144,33 @@ Add-Check "Review" (-not $revProblem) $(if ($revProblem) { $revProblem } else { 
 $pr = Read-TopicDoc 'pr.md'
 $prStatus = if ($pr) { Get-HeaderField $pr 'Status' } else { $null }
 Add-Check "Akceptacja PR" ($prStatus -eq 'approved') $(if ($prStatus -eq 'approved') { "pr.md: approved" } else { "pr.md: $prStatus - akceptację (Status: approved + osoba i data) wpisuje człowiek" })
+
+# --- Slopwatch (wyłączone testy, puste catch, wyciszone ostrzeżenia) -----------
+# Aktywny, gdy projekt ma baseline (.slopwatch/baseline.json - tworzy i aktualizuje człowiek).
+$baseline = Join-Path $root ".slopwatch/baseline.json"
+$sw = Get-SlopwatchInvocation $root
+if (-not (Test-Path -LiteralPath $baseline)) {
+    Add-Check "Slopwatch" $true "nieaktywny (brak .slopwatch/baseline.json)"
+} elseif (-not $sw) {
+    Add-Check "Slopwatch" $false "jest baseline, ale brak narzędzia - dodaj manifest .config/dotnet-tools.json (Init-SDLC.ps1 -Stack dotnet) lub zainstaluj Slopwatch.Cmd"
+} else {
+    try {
+        $restoreOk = $true
+        if ($sw.Local) {
+            # Narzędzie lokalne: przywrócenie z NuGet (szybkie, gdy pakiet jest już w pamięci podręcznej)
+            $restoreOk = ((Invoke-External 'dotnet' @('tool', 'restore') $root -Quiet) -eq 0)
+        }
+        if (-not $restoreOk) {
+            Add-Check "Slopwatch" $false "'dotnet tool restore' nie powiódł się - sprawdź dostęp do NuGet"
+        } else {
+            # Tryb ścisły (zalecany w skillu): ostrzeżenia też blokują, np. #pragma warning disable
+            $swCode = Invoke-External $sw.Exe ($sw.Prefix + @('analyze', '-d', '.', '--fail-on', 'warning')) $root
+            Add-Check "Slopwatch" ($swCode -eq 0) $(if ($swCode -eq 0) { "brak nowych problemów względem baseline" } else { "nowe problemy (kod $swCode) - napraw kod; baseline zmienia wyłącznie człowiek" })
+        }
+    } catch {
+        Add-Check "Slopwatch" $false "nie udało się uruchomić slopwatch: $($_.Exception.Message)"
+    }
+}
 
 # --- Testy -----------------------------------------------------------------------
 if ($config.testCommand.Count -eq 0) {

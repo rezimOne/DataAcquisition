@@ -33,8 +33,28 @@ function Test-Under([string]$path, [string]$root) {
     return $path.StartsWith($root + [System.IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
 }
 
+# Tresc Markdown bez blokow kodu (``` lub ~~~, takze niezamknietych - do konca pliku, jak w
+# CommonMark). Przyklady komend i kodu w planie nie sa zakresem planu ani jego statusem,
+# a ich backticki nie moga przesuwac parowania sciezek w dalszej czesci dokumentu.
+function Remove-MdCodeBlocks([string]$text) {
+    $t = $text.Replace("`r`n", "`n")
+    $rx = '(?ms)^[ \t]{0,3}(?<f>`{3,}|~{3,})[^\n]*\n.*?(?:^[ \t]{0,3}\k<f>[`~]*[ \t]*$|\z)'
+    return [regex]::Replace($t, $rx, '')
+}
+
+# Sciezki w kodzie inline (`...`, ``...`` itd.) poza blokami kodu - wg CommonMark: ciag n
+# backtickow zamyka sie ciagiem dokladnie n backtickow.
+function Get-MdInlineCode([string]$text) {
+    $rx = '(?<!`)(?<t>`+)(?!`)(?<c>.+?)(?<!`)\k<t>(?!`)'
+    foreach ($m in [regex]::Matches((Remove-MdCodeBlocks $text), $rx)) {
+        $c = $m.Groups['c'].Value
+        if ($c.Length -ge 2 -and $c.StartsWith(' ') -and $c.EndsWith(' ')) { $c = $c.Substring(1, $c.Length - 2) }
+        $c
+    }
+}
+
 function Test-PlanApproved([string]$planText) {
-    return $planText -match $script:SdlcApprovedRx
+    return (Remove-MdCodeBlocks $planText) -match $script:SdlcApprovedRx
 }
 
 # Czy token z planu (sciezka w backtickach) obejmuje plik $rel (sciezka wzgledna, '/')
@@ -48,10 +68,10 @@ function Test-PlanToken([string]$token, [string]$rel) {
            ($tok.Contains('*') -and ($rel -like $tok))
 }
 
-# Czy plan (tresc) wymienia plik $rel
+# Czy plan (tresc) wymienia plik $rel - w kodzie inline poza blokami kodu
 function Test-PlanCovers([string]$planText, [string]$rel) {
-    foreach ($m in [regex]::Matches($planText, '`([^`]+)`')) {
-        if (Test-PlanToken $m.Groups[1].Value $rel) { return $true }
+    foreach ($tok in (Get-MdInlineCode $planText)) {
+        if (Test-PlanToken $tok $rel) { return $true }
     }
     return $false
 }
@@ -74,9 +94,59 @@ function Get-PlanAuthorization([string]$root, [string]$rel) {
     return $result
 }
 
+# Pliki, ktorych zmiana nie wymaga planu: dokumentacja i glowne pliki instrukcji.
+# Jedna definicja dla hooka edycji, New-PullRequest i Test-TopicReady - wszystko inne
+# (takze .claude/ poza plikami tylko dla czlowieka) musi byc wymienione w plan.md.
+function Test-FreePath([string]$rel) {
+    return $rel -match '(?i)^(docs/|(CLAUDE|AGENTS|REVIEW|README)\.md$)'
+}
+
 # Pliki konfigurujace bramki - zmienia je wylacznie czlowiek (poza sesja agenta)
 function Test-HumanOnlyPath([string]$rel) {
-    return $rel -match '(?i)^(\.claude/(settings[^/]*\.json$|hooks/|agents/|skills/|sdlc\.json$)|\.githooks/|tools/)'
+    # .slopwatch/ = baseline narzedzia slopwatch (akceptacja "dlugu" nalezy do czlowieka)
+    # dotnet-tools.json (w .config/ lub w korzeniu) = manifest narzedzi lokalnych .NET (wersje narzedzi bramek)
+    return $rel -match '(?i)^(\.claude/(settings[^/]*\.json$|hooks/|agents/|skills/|sdlc\.json$)|\.githooks/|tools/|\.slopwatch/|(\.config/)?dotnet-tools\.json$)'
+}
+
+# Manifest narzedzi lokalnych .NET: dotnet szuka .config/dotnet-tools.json, potem dotnet-tools.json
+# w korzeniu (nowsze SDK tworza go w korzeniu). Zwraca istniejaca sciezke lub $null.
+function Get-DotnetToolsManifest([string]$root) {
+    foreach ($candidate in @('.config/dotnet-tools.json', 'dotnet-tools.json')) {
+        $p = Join-Path $root $candidate
+        if (Test-Path -LiteralPath $p) { return $p }
+    }
+    return $null
+}
+
+# Uruchomienie programu z lista argumentow bez wyjatku przy stderr; zwraca kod wyjscia.
+# Wyjscie programu idzie na konsole (Out-Host), chyba ze -Quiet.
+function Invoke-External([string]$exe, [string[]]$argv, [string]$workDir, [switch]$Quiet) {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $workDir
+    try {
+        if ($Quiet) { & $exe @argv 2>&1 | Out-Null } else { & $exe @argv 2>&1 | Out-Host }
+        return $LASTEXITCODE
+    } finally {
+        Pop-Location
+        $ErrorActionPreference = $prev
+    }
+}
+
+# Sposob wywolania slopwatch w projekcie: narzedzie lokalne z manifestu
+# .config/dotnet-tools.json (preferowane, wersja przypieta w repo) albo globalne.
+# Zwraca { Exe; Prefix; Local } lub $null.
+function Get-SlopwatchInvocation([string]$root) {
+    $manifest = Get-DotnetToolsManifest $root
+    if ($manifest -and ([System.IO.File]::ReadAllText($manifest) -match '"slopwatch"')) {
+        if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+            return [pscustomobject]@{ Exe = 'dotnet'; Prefix = @('tool', 'run', 'slopwatch'); Local = $true }
+        }
+    }
+    if (Get-Command slopwatch -ErrorAction SilentlyContinue) {
+        return [pscustomobject]@{ Exe = 'slopwatch'; Prefix = @(); Local = $false }
+    }
+    return $null
 }
 
 # Konfiguracja projektu SDLC (.claude/sdlc.json) z wartosciami domyslnymi

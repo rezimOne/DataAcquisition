@@ -1,6 +1,6 @@
 # Intent: DA-002 — Klient MTConnect w workerze
 
-ID: DA-002. Status: ready. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 417e369.
+ID: DA-002. Status: verified. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 417e369.
 
 ## Problem i dowód
 

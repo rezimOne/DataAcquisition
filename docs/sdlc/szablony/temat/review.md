@@ -1,6 +1,6 @@
 # Review: <ID — tytuł>
 
-Status: not-run. Commit: <SHA>. Baza: <baza>. Recenzent: sdlc-reviewer. Data: <data>.
+Status: not-run. Commit: <SHA>. Baza: <merge-base>. Recenzent: sdlc-reviewer. Data: <data>.
 
 > Plik zapisuje wyłącznie recenzent (`/sdlc-review <ID>` lub `tools/Invoke-Review.ps1 -Id <ID>`) — autor zmian ma blokadę zapisu. Człowiek może ręcznie zmienić status uwagi na `odrzucona` z uzasadnieniem.
 > Statusy: not-run → changes-requested / no-blocking-findings. `Commit` = przejrzany commit; po każdej zmianie kodu review trzeba powtórzyć.
@@ -11,6 +11,12 @@ Status: not-run. Commit: <SHA>. Baza: <baza>. Recenzent: sdlc-reviewer. Data: <d
 | ID | Priorytet | Plik:linia | Scenariusz i uzasadnienie | Status |
 |---|---|---|---|---|
 | R-01 | P1 / P2 / P3 | `src/...:<linia>` | <sekwencja zdarzeń prowadząca do problemu i realny skutek> | otwarta / naprawiona / odrzucona |
+
+## Zastosowane skille
+
+| Skill | Dla plików / obszaru | Uwagi |
+|---|---|---|
+| `<plugin:skill>` | `<ścieżki>` | <załadowany / niedostępny — powód> |
 
 ## Zgodność z planem
 

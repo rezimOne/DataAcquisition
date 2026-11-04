@@ -6,7 +6,7 @@ Niniejszy katalog zawiera dokumentację techniczną projektu, rejestr decyzji ar
 
 ## 🗺️ Mapa dokumentacji
 
-1. **[Proces SDLC](PROCES.md)** — jak prowadzić zadania od intencji po wydanie.
+1. **[Proces SDLC](PROCES.md)** — jak prowadzić zadania od intencji po wydanie, w tym lokalny Pull Request (`pr.md`), review (`review.md`), bramki przed pushem i egzekucja reguł (hooki).
 2. **[Kontekst i Architektura](00-kontekst/ANALIZA-PROJEKTU.md)** — ogólny opis systemu, technologie i ograniczenia.
 3. **[Stan Funkcji i Modułów](00-kontekst/STAN-FUNKCJI.md)** — spis modułów oraz ich dojrzałość.
 4. **[Ustalenia i Ryzyka](00-kontekst/USTALENIA.md)** — rejestr ryzyk technicznych i reguł krytycznych.
@@ -32,9 +32,9 @@ docs/sdlc/
   04-test/STRATEGIA.md          # Scenariusze i dowody testowe
   05-deploy/WYDANIE.md          # Standard wydań
   06-maintain/UTRZYMANIE.md      # Utrzymanie i postępowanie poincydentalne
-  tematy/                       # Karty poszczególnych zmian (np. PROJ-001-...)
+  tematy/                       # Karty zmian: intent, spec, plan, verification, pr, review, release
   szablony/                     # Szablony dokumentów (temat, adr, incident)
 ```
 
 > [!NOTE]
-> Wszystkie dokumenty powiązane z pojedynczą zmianą żyją razem w katalogu `tematy/<ID>-<nazwa>/`, dzięki czemu intencja, specyfikacja, plan wdrożenia i dowody testów są zarchiwizowane w jednym miejscu w historii repozytorium.
+> Wszystkie dokumenty powiązane z pojedynczą zmianą żyją razem w katalogu `tematy/<ID>-<nazwa>/` (i na gałęzi `topic/<ID>-<nazwa>`), dzięki czemu intencja, specyfikacja, plan, dowody testów, PR i review są zarchiwizowane w jednym miejscu w historii repozytorium. Routing skilli technicznych dla stosu projektu jest w `CLAUDE.md` (sekcja *Skille*).
