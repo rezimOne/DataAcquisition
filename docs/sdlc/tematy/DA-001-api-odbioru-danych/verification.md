@@ -1,6 +1,6 @@
 # Weryfikacja: DA-001
 
-Status: verified. Commit: 40df9fc. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, ASP.NET Core runtime 10.0.12; testy integracyjne na `TestServer` (środowisko `Testing`, klucz API losowy per przebieg); test ręczny — `dotnet run` profil `http` (Development), klucz przez zmienną środowiskową (losowy, nie zapisany). Data: 2026-11-04.
+Status: verified. Commit: d728000. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, ASP.NET Core runtime 10.0.12; testy integracyjne na `TestServer` (środowisko `Testing`, klucz API losowy per przebieg); test ręczny — `dotnet run` profil `http` (Development), klucz przez zmienną środowiskową (losowy, nie zapisany). Data: 2026-11-04.
 
 ## Wyniki testów vs Kryteria Odbioru
 
@@ -13,7 +13,7 @@ Status: verified. Commit: 40df9fc. Środowisko: Windows 11 Pro, .NET SDK 10.0.40
 | AC-05 | `Post_SameBatchTwice_SecondReportsDuplicatesOnly`, `Post_OverlappingBatch_AcceptsOnlyNewObservations`, `Post_ParallelIdenticalBatches_StoresEachObservationOnce` (4 × 200), `InMemoryObservationStoreTests.AddAsync_*` (w tym 8 równoległych × 500); test ręczny powtórnego POST | `{0, N}`; `{1, 2}`; suma `accepted` = liczba unikalnych; brak duplikatów w GET | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
 | AC-06 | `Get_FilterByDeviceTimeRangeAndLimit_ReturnsSortedPageWithTruncatedFlag`, `Get_InvalidParameters_Returns400WithFieldError` (5 przypadków), `Get_UnknownDevice_Returns200WithEmptyList`, `InMemoryObservationStoreTests.QueryAsync_*`; test ręczny GET bez `deviceId` | Filtr urządzenia i `[from, to)`, sortowanie (`instanceId`, `sequence`), `limit`, `truncated`; błędne parametry `400`; nieznane urządzenie `200` puste | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
 | AC-07 | `HealthAndStartupTests.GetHealth_WithoutApiKey_Returns200Healthy`; test ręczny `/health` | `200`, `Healthy` | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
-| AC-08 | `Startup_MissingOrTooShortApiKey_FailsWithConfigurationKeyInMessage` (null, pusty, 31 znaków), `Startup_ApiKeyOfMinimumLength_Starts`, `Requests_WithValidAndInvalidKeys_NeverLogKeyValues`, `AddAsync_DuplicateWithDifferentContent_LogsWarningWithoutValue`; brak `Api/appsettings*.json`; test ręczny: `grep` klucza w logu procesu | Start przerwany `OptionsValidationException` z `ApiKey:Value`; klucz nigdzie w logach ani w repozytorium | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl), [Sekrety w repo](#sekrety-w-repozytorium) |
+| AC-08 | `Startup_MissingOrTooShortApiKey_FailsWithConfigurationKeyInMessage` (null, pusty, 31 znaków), `Startup_ApiKeyOfMinimumLength_Starts`, `Requests_WithValidAndInvalidKeys_NeverLogKeyValues`, `AddAsync_DuplicateWithDifferentContent_LogsWarningWithoutValue`; test ręczny: start ze starą nazwą zmiennej, `grep` klucza w logu procesu | Start przerwany `OptionsValidationException` z `DataAcquisition:Api:ApiKey`; klucz nigdzie w logach ani w repozytorium | PASS (zastrzeżenie: treści `Api/appsettings*.json` agent nie może odczytać — patrz Pominięcia) | [Lista testów](#lista-testów), [Test ręczny po zmianie nazwy](#test-ręczny-po-zmianie-nazwy-klucza-i-dodaniu-appsettings-commit-d728000), [Sekrety w repo](#sekrety-w-repozytorium) |
 
 ## Dowody
 
@@ -36,6 +36,21 @@ $ dotnet test DataAcquisition.slnx --nologo --no-build
 Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 117 ms - DataAcquisition.Worker.Tests.dll (net10.0)
 Passed!  - Failed:     0, Passed:    73, Skipped:     0, Total:    73, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
 exit=0
+```
+
+Ponownie po zmianie nazwy klucza i dodaniu `appsettings` (drzewo = commit `d728000`):
+
+```text
+$ dotnet build DataAcquisition.slnx --nologo
+    0 Warning(s)
+    0 Error(s)
+BUILD_EXIT=0
+$ dotnet test DataAcquisition.slnx --nologo --no-build
+Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 127 ms - DataAcquisition.Worker.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    73, Skipped:     0, Total:    73, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
+TEST_EXIT=0
+$ dotnet format DataAcquisition.slnx --verify-no-changes
+FORMAT_EXIT=0
 ```
 
 Przebieg czerwony przed implementacją (walidator i store jako `NotImplementedException`, drzewo robocze przed commitem `873fe38`):
@@ -157,18 +172,58 @@ Healthy [200]
 0
 ```
 
-### Sekrety w repozytorium
+(Powyższy przebieg wykonano na `40df9fc` — przed zmianą nazwy klucza i bez `appsettings`.)
+
+### Test ręczny po zmianie nazwy klucza i dodaniu appsettings (commit d728000)
+
+Klucz losowy `daq-api-` + `secrets.token_hex(24)`, tylko w zmiennej środowiskowej procesu.
 
 ```text
-$ grep -c . Api/appsettings*.json
-grep: Api/appsettings*.json: No such file or directory
+=== stara nazwa ApiKey__Value (oczekiwany brak startu)
+      Microsoft.Extensions.Options.OptionsValidationException: Configuration 'DataAcquisition:Api:ApiKey' is required and must be at least 32 characters long.
+Unhandled exception. Microsoft.Extensions.Options.OptionsValidationException: Configuration 'DataAcquisition:Api:ApiKey' is required and must be at least 32 characters long.
+=== nowa nazwa (DataAcquisition__Api__ApiKey)
+Healthy [200]
+{"accepted":1,"duplicates":0} [200]
+bez klucza [401]
+=== log procesu
+Using launch settings from Api\Properties\launchSettings.json...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5100
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\nog_programista2\Projects\DataAcquisition\Api
+dbug: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[9]
+      AuthenticationScheme: ApiKey was not authenticated.
+dbug: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[9]
+      AuthenticationScheme: ApiKey was not authenticated.
+dbug: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[8]
+      AuthenticationScheme: ApiKey was successfully authenticated.
+info: DataAcquisition.Api.Observations.ObservationEndpoints[0]
+      Observation batch from VMC5AX (instance 1): 1 accepted, 0 duplicates.
+dbug: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[9]
+      AuthenticationScheme: ApiKey was not authenticated.
+warn: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[0]
+      Rejected GET /api/v1/observations: missing or invalid API key.
+info: DataAcquisition.Api.ApiKey.ApiKeyAuthenticationHandler[12]
+      AuthenticationScheme: ApiKey was challenged.
+=== klucz w logu: 0
 ```
+
+Wnioski: stara nazwa zmiennej nie jest już czytana; `appsettings` działają — brak logów `Microsoft.AspNetCore.*` na `Information` (por. poprzedni przebieg), w Development widoczne `dbug` dla `DataAcquisition.*`.
+
+### Sekrety w repozytorium
+
+Pliki `Api/appsettings.json` i `Api/appsettings.Development.json` utworzył człowiek; agent ma regułę odmowy odczytu `**/appsettings*.json`, więc **nie zweryfikował ich treści** (brak klucza w nich potwierdza pośrednio start ze starą nazwą zmiennej — gdyby `appsettings` zawierały `DataAcquisition:Api:ApiKey`, API by wystartowało).
 
 Klucz w testach: `ApiFactory.TestApiKey` generowany losowo w czasie wykonania (brak literału w kodzie).
 
 ## Pominięcia i ograniczenia
 
-- **`Api/appsettings*.json` nie istnieją** (odstępstwo 1 w `plan.md` — blokada uprawnień agenta). Skutek widoczny w teście ręcznym: logi `Microsoft.AspNetCore.*` na poziomie `Information`.
+- **Treść `Api/appsettings*.json` niezweryfikowana przez agenta** (reguła odmowy odczytu) — do przejrzenia przez człowieka/recenzenta w diffie.
 - **`timestamp` bez przesunięcia nie jest odrzucany** (odstępstwo 2 w `plan.md`) — brak testu na ten przypadek, bo zachowanie nie jest zaimplementowane.
 - Nie testowano obciążeniowo ani długotrwałej pracy (wzrost pamięci store'a — ryzyko zaakceptowane w spec).
 - Nie testowano integracji z realnym workerem (worker poza zakresem DA-001) ani z symulatorem MTConnect.
