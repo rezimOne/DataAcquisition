@@ -1,0 +1,29 @@
+## Build and output folders
+bin/
+obj/
+publish/
+.vs/
+.idea/
+.vscode/
+updates/
+*.zip
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Environment files containing secrets
+.env
+.env.production
+.env.staging
+.env.local
+
+## OS generated
+.DS_Store
+Thumbs.db
+
+## Licencje klientów (.lic) - nigdy w repo; testy (tests/manual/license-race.cs) biorą ścieżkę z argumentu
+*.lic

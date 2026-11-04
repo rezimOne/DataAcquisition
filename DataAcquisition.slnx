@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Worker/DataAcquisition.Worker.csproj" />
+  <Project Path="Worker.Tests/DataAcquisition.Worker.Tests.csproj" />
+</Solution>
