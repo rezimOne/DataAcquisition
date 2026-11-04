@@ -168,6 +168,35 @@ public sealed class ObservationsApiTests : IAsyncDisposable
         Assert.Empty((await QueryAsync($"?deviceId={DeviceId}")).Items);
     }
 
+    [Theory]
+    [InlineData("""{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"xpos","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":7,"value":"1"}]}""")]
+    [InlineData("""{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"xpos","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":0,"value":"1"}]}""")]
+    [InlineData("""{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"xpos","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":"7","value":"1"}]}""")]
+    [InlineData("""{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"system","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":"Condition","value":"x","conditionLevel":42}]}""")]
+    [InlineData("""{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"system","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":"Condition","value":"x","conditionLevel":1}]}""")]
+    public async Task Post_NumericEnumValue_Returns400AndStoresNothing(string body)
+    {
+        var response = await _client.PostAsync(ApiContract.ObservationsPath, JsonContent(body), Ct);
+
+        await AssertProblemAsync(response, HttpStatusCode.BadRequest);
+        Assert.Empty((await QueryAsync($"?deviceId={DeviceId}")).Items);
+    }
+
+    [Theory]
+    [InlineData("text/plain")]
+    [InlineData(null)]
+    public async Task Post_NonJsonContentType_Returns415AndStoresNothing(string? mediaType)
+    {
+        using var content = new StringContent(
+            """{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"xpos","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":"Sample","value":"1"}]}""");
+        content.Headers.ContentType = mediaType is null ? null : new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
+
+        var response = await _client.PostAsync(ApiContract.ObservationsPath, content, Ct);
+
+        await AssertProblemAsync(response, HttpStatusCode.UnsupportedMediaType);
+        Assert.Empty((await QueryAsync($"?deviceId={DeviceId}")).Items);
+    }
+
     // AC-05
 
     [Fact]

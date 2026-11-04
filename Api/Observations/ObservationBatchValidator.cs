@@ -62,6 +62,10 @@ internal static class ObservationBatchValidator
             {
                 Add($"{path}.category", "category is required.");
             }
+            else if (!Enum.IsDefined(observation.Category.Value))
+            {
+                Add($"{path}.category", "category must be one of: Sample, Event, Condition.");
+            }
 
             ValidateOptionalLength(observation.Type, $"{path}.type", MaxIdLength, Add);
             ValidateOptionalLength(observation.SubType, $"{path}.subType", MaxIdLength, Add);
@@ -83,6 +87,10 @@ internal static class ObservationBatchValidator
                      && observation.ConditionLevel is not null)
             {
                 Add($"{path}.conditionLevel", "conditionLevel is allowed only for Condition observations.");
+            }
+            else if (observation.ConditionLevel is { } level && !Enum.IsDefined(level))
+            {
+                Add($"{path}.conditionLevel", "conditionLevel must be one of: Normal, Warning, Fault, Unavailable.");
             }
         }
 

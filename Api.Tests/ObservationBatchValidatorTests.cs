@@ -150,6 +150,22 @@ public sealed class ObservationBatchValidatorTests
     }
 
     [Fact]
+    public void Validate_UndefinedCategory_ReturnsIndexedFieldError()
+    {
+        var errors = ObservationBatchValidator.Validate(Batch(Sample(1) with { Category = (ObservationCategory)7 }));
+
+        Assert.Equal(["observations[0].category"], errors.Keys);
+    }
+
+    [Fact]
+    public void Validate_UndefinedConditionLevel_ReturnsIndexedFieldError()
+    {
+        var errors = ObservationBatchValidator.Validate(Batch(Condition(1) with { ConditionLevel = (ConditionLevel)42 }));
+
+        Assert.Equal(["observations[0].conditionLevel"], errors.Keys);
+    }
+
+    [Fact]
     public void Validate_TooLongTypeAndSubType_ReturnsIndexedFieldErrors()
     {
         var errors = ObservationBatchValidator.Validate(
