@@ -106,7 +106,7 @@ public sealed class MTConnectClientTests
             RequestedUrls.Add(request.RequestUri!.ToString());
             if (hang)
             {
-                await Task.Delay(Timeout.Infinite, cancellationToken);
+                await TestWaits.UntilCanceledAsync(cancellationToken);
             }
             return new HttpResponseMessage(status) { Content = new StringContent(body) };
         }

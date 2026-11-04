@@ -59,4 +59,7 @@ Komendy (kod 0 wymagany, output do `verification.md`, kody wyjścia bez potoku):
 ## Zgoda na zakres i odstępstwa
 
 - **Akceptacja planu**: zaakceptowano — nog_programista2, 2026-11-04.
-- **Odstępstwa**: <zmiany planu w trakcie implementacji wraz z uzasadnieniem; aktualizuj w tym samym commicie co kod, którego dotyczą>.
+- **Odstępstwa**:
+  1. **Kolejność kroków**: krok 3 (`Worker.Tests/TestWaits.cs`) wykonany przed krokiem 1, bo testy z kroku 1 korzystają z pomocnika. Czerwony przebieg z kroku 1 zachowany (2/55 — brak logu `Debug`), potem krok 2.
+  2. **Filtr logów w `WorkerTests.BuildHost`** (w zakresie kroku 4): `AddFilter("DataAcquisition", LogLevel.Debug)` zamiast `SetMinimumLevel(LogLevel.Debug)` — reguła `Default` z `appsettings.json` workera (kopiowanego do katalogu testów) ma pierwszeństwo przed `SetMinimumLevel`, więc log `Debug` nie był zbierany; filtr kategorii jest bardziej szczegółowy i wygrywa.
+  3. Nazwy testów `RunAsync_Stopped…` rozszerzone o `…AndLogsStop` (nowa asercja AC-03).

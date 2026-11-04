@@ -340,64 +340,64 @@ public sealed class MTConnectSynchronizerTests
     // AC-07
 
     [Fact]
-    public async Task RunAsync_StoppedWhileWaiting_CompletesWithoutWarnings()
+    public async Task RunAsync_StoppedWhileWaiting_CompletesWithoutWarningsAndLogsStop()
     {
         _agent.Probe(Devices()).Current(Streams(InstanceA, 4, 3, 3)).Sample(Streams(InstanceA, 4, 3));
-        var timeProvider = new TimerCountingTimeProvider();
+        var timeProvider = new TimerSignalingTimeProvider();
         var synchronizer = new MTConnectSynchronizer(_agent, _sink, Options.Create(new MTConnectOptions()), timeProvider, _logger);
         using var stopping = new CancellationTokenSource();
 
         var run = synchronizer.RunAsync(stopping.Token);
-        await WaitUntilAsync(() => timeProvider.CreatedTimers == 1);
+        // The synchronizer waits PollInterval on a timer; the timeout only guards against a hanging test.
+        await timeProvider.FirstTimerCreated.WaitAsync(SignalTimeout, Ct);
         await stopping.CancelAsync();
         await run;
 
         Assert.True(run.IsCompletedSuccessfully);
-        Assert.Empty(Logs(LogLevel.Warning));
-        Assert.Empty(Logs(LogLevel.Error));
+        AssertStoppedQuietly();
     }
 
     [Fact]
-    public async Task RunAsync_StoppedDuringRequest_CompletesWithoutWarnings()
+    public async Task RunAsync_StoppedDuringRequest_CompletesWithoutWarningsAndLogsStop()
     {
-        var requestStarted = new TaskCompletionSource();
+        var requestStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _agent.Probes.Enqueue(async ct =>
         {
             requestStarted.SetResult();
-            await Task.Delay(Timeout.Infinite, ct);
+            await TestWaits.UntilCanceledAsync(ct);
             throw new InvalidOperationException("unreachable");
         });
         using var stopping = new CancellationTokenSource();
 
         var run = _synchronizer.RunAsync(stopping.Token);
-        await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), Ct);
+        await requestStarted.Task.WaitAsync(SignalTimeout, Ct);
         await stopping.CancelAsync();
         await run;
 
         Assert.True(run.IsCompletedSuccessfully);
+        AssertStoppedQuietly();
+    }
+
+    private static readonly TimeSpan SignalTimeout = TimeSpan.FromSeconds(5);
+
+    private void AssertStoppedQuietly()
+    {
         Assert.Empty(Logs(LogLevel.Warning));
         Assert.Empty(Logs(LogLevel.Error));
+        Assert.Contains(Logs(LogLevel.Debug), r => r.Message == "MTConnect synchronization stopped.");
     }
 
-    private static async Task WaitUntilAsync(Func<bool> condition)
+    /// <summary>Signals when the synchronizer creates its first timer (starts waiting between cycles).</summary>
+    private sealed class TimerSignalingTimeProvider : FakeTimeProvider
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        while (!condition())
-        {
-            await Task.Delay(10, timeout.Token);
-        }
-    }
+        private readonly TaskCompletionSource _firstTimerCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    private sealed class TimerCountingTimeProvider : FakeTimeProvider
-    {
-        private int _createdTimers;
-
-        public int CreatedTimers => Volatile.Read(ref _createdTimers);
+        public Task FirstTimerCreated => _firstTimerCreated.Task;
 
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
             var timer = base.CreateTimer(callback, state, dueTime, period);
-            Interlocked.Increment(ref _createdTimers);
+            _firstTimerCreated.TrySetResult();
             return timer;
         }
     }

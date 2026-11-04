@@ -47,12 +47,12 @@ public sealed class WorkerTests
     [Fact]
     public async Task StopAsync_WhileRequestInProgress_CompletesWithoutWarningsOrErrors()
     {
-        var requestStarted = new TaskCompletionSource();
+        var requestStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var agent = new FakeAgent();
         agent.Probes.Enqueue(async ct =>
         {
             requestStarted.SetResult();
-            await Task.Delay(Timeout.Infinite, ct);
+            await TestWaits.UntilCanceledAsync(ct);
             throw new InvalidOperationException("unreachable");
         });
         using var host = BuildHost(agent: agent);
@@ -66,6 +66,7 @@ public sealed class WorkerTests
         Assert.True(worker.ExecuteTask!.IsCompletedSuccessfully);
         var logs = host.Services.GetFakeLogCollector().GetSnapshot();
         Assert.DoesNotContain(logs, r => r.Level >= LogLevel.Warning);
+        Assert.Contains(logs, r => r.Level == LogLevel.Debug && r.Message == "MTConnect synchronization stopped.");
     }
 
     [Fact]
@@ -82,7 +83,8 @@ public sealed class WorkerTests
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Testing" });
         builder.Configuration.AddInMemoryCollection(settings ?? []);
-        builder.Logging.ClearProviders().AddFakeLogging();
+        // Category filter beats the "Default" rule from appsettings, so Debug logs of the worker are collected.
+        builder.Logging.ClearProviders().AddFakeLogging().AddFilter("DataAcquisition", LogLevel.Debug);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddMTConnect();
         builder.Services.AddHostedService<Worker>();
