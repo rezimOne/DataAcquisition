@@ -18,6 +18,21 @@
       "Edit(**/.claude/skills/**)",
       "Edit(**/.claude/sdlc.json)",
       "Edit(**/.githooks/**)",
+      "Edit(/.slopwatch/**)",
+      "Edit(**/.slopwatch/**)",
+      "Bash(slopwatch *--update-baseline*)",
+      "Bash(dotnet tool run slopwatch *--update-baseline*)",
+      "Bash(dotnet slopwatch *--update-baseline*)",
+      "Bash(*slopwatch *--create-baseline*)",
+      "Bash(slopwatch init*)",
+      "Bash(dotnet slopwatch init*)",
+      "Bash(dotnet tool run slopwatch init*)",
+      "Edit(/.config/dotnet-tools.json)",
+      "Edit(**/.config/dotnet-tools.json)",
+      "Edit(/dotnet-tools.json)",
+      "Bash(dotnet tool install*)",
+      "Bash(dotnet tool update*)",
+      "Bash(dotnet tool uninstall*)",
       "Read(/.env)",
       "Read(/.env.*)",
       "Read(/**/secrets/**)",
@@ -40,9 +55,7 @@
       "Bash(git -c core.hooksPath*)",
       "Bash(git -c core.hookspath*)"
     ],
-    "ask": [
-      "Bash(git push *)"
-    ]
+    "ask": ["Bash(git push *)"]
   },
   "hooks": {
     "PreToolUse": [
@@ -52,7 +65,13 @@
           {
             "type": "command",
             "command": "powershell",
-            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-edit-guard.ps1"],
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-edit-guard.ps1"
+            ],
             "onFailure": "block",
             "timeout": 15
           }
@@ -65,7 +84,13 @@
             "type": "command",
             "if": "Bash(git *)",
             "command": "powershell",
-            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-bash-guard.ps1"],
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-bash-guard.ps1"
+            ],
             "onFailure": "block",
             "timeout": 15
           }
@@ -79,11 +104,29 @@
           {
             "type": "command",
             "command": "powershell",
-            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-format.ps1"],
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-format.ps1"
+            ],
             "timeout": 30
           }
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "dotnet-skills@dotnet-skills": true,
+    "microsoft-docs@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "dotnet-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Aaronontheweb/dotnet-skills"
+      }
+    }
   }
 }
