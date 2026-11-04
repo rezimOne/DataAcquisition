@@ -45,12 +45,16 @@ Worker był szkieletem logującym co sekundę (intent.md). Zmiana dodaje klienta
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 14:39. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `d11c13f`**.
+Wygenerowano: 2026-11-04 14:44. Gałąź: `topic/DA-002-klient-mtconnect`. Baza: `main` (merge-base `417e369`). **HEAD: `ec8083f`**.
 
-Diff do review: `git diff 417e369 d11c13f` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 417e369 ec8083f` — pełna treść w `.claude/sdlc-tmp/DA-002-klient-mtconnect.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (12)
+### Commity (16)
 
+- `ec8083f` DA-002: verification.md i pr.md po R-04
+- `d83768a` DA-002: R-04 brak petli OUT_OF_RANGE po wznowieniu z bufora
+- `20da805` DA-002: test R-04 - OUT_OF_RANGE zaraz po wznowieniu z bufora nie moze zapetlic (czerwony)
+- `ad8de4e` DA-002: review iteracja 2 (no-blocking-findings)
 - `d11c13f` DA-002: pr.md - dane automatyczne
 - `10049e8` DA-002: verification.md dla 6538cca, pr.md po review 1
 - `6538cca` DA-002: /sample od razu po synchronizacji; zapas wznowienia ograniczony do 10% bufora
@@ -101,7 +105,7 @@ Diff do review: `git diff 417e369 d11c13f` — pełna treść w `.claude/sdlc-tm
 | A | `docs/sdlc/tematy/DA-002-klient-mtconnect/spec.md` | dokumentacja |
 | A | `docs/sdlc/tematy/DA-002-klient-mtconnect/verification.md` | dokumentacja |
 
-Statystyka: 32 files changed, 2263 insertions(+), 76 deletions(-)
+Statystyka: 32 files changed, 2333 insertions(+), 76 deletions(-)
 
 ### Kryteria akceptacji
 
