@@ -12,7 +12,7 @@ Status: approved. Odpowiedzialny: nog_programista2. Data: 2026-11-04. Źródło:
 4. **Duplikat `sequence` wewnątrz jednej paczki** → `400` (paczka niespójna).
 5. **Współbieżność**: Repozytorium jest bezpieczne wątkowo. Dwie równoległe paczki z tymi samymi kluczami → każda obserwacja zapisana dokładnie raz; suma `accepted` z obu odpowiedzi = liczba unikalnych kluczy.
 6. **Brak / błędny klucz API** → `401`, walidacja treści nie jest wykonywana, nic nie jest zapisywane.
-7. **Niepoprawny JSON / zły `Content-Type`** → `400` (`ProblemDetails`).
+7. **Niepoprawny JSON** (w tym enum podany liczbą lub liczbowym stringiem, np. `"category": 7` / `"7"`) → `400` (`ProblemDetails`). **Zły lub brakujący `Content-Type`** (inny niż `application/json`) → `415 Unsupported Media Type` (`ProblemDetails`) — zachowanie Minimal API, zmiana z `400` po review R-02 za zgodą człowieka (2026-11-04).
 
 ### Odczyt obserwacji — `GET /api/v1/observations`
 

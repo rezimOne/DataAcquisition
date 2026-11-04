@@ -1,6 +1,6 @@
 # Weryfikacja: DA-001
 
-Status: verified. Commit: d728000. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, ASP.NET Core runtime 10.0.12; testy integracyjne na `TestServer` (środowisko `Testing`, klucz API losowy per przebieg); test ręczny — `dotnet run` profil `http` (Development), klucz przez zmienną środowiskową (losowy, nie zapisany). Data: 2026-11-04.
+Status: verified. Commit: d1d9f5d. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, ASP.NET Core runtime 10.0.12; testy integracyjne na `TestServer` (środowisko `Testing`, klucz API losowy per przebieg); test ręczny — `dotnet run` profil `http` (Development), klucz przez zmienną środowiskową (losowy, nie zapisany). Data: 2026-11-04.
 
 ## Wyniki testów vs Kryteria Odbioru
 
@@ -9,7 +9,7 @@ Status: verified. Commit: d728000. Środowisko: Windows 11 Pro, .NET SDK 10.0.40
 | AC-01 | `dotnet build DataAcquisition.slnx`; `dotnet test DataAcquisition.slnx`; `dotnet format DataAcquisition.slnx --verify-no-changes` | Kod 0; solucja z `Contracts`, `Api`, `Api.Tests`; testy workera zielone | PASS | [Build](#build), [Testy — podsumowanie](#testy--podsumowanie), [Format](#format) |
 | AC-02 | `ObservationsApiTests.Post_ValidBatchWithSampleAndCondition_AcceptsAndReturnsFromQuery`, `Post_ValidBatch_UsesCamelCaseAndStringEnumsOnWire`; test ręczny POST/GET | `200 {accepted:2, duplicates:0}`; GET zwraca obie obserwacje 1:1, czas w UTC | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
 | AC-03 | `Post_WithoutApiKey_Returns401AndStoresNothing`, `Post_WithInvalidApiKey_Returns401AndStoresNothing`, `Post_WithoutApiKeyAndInvalidBody_Returns401NotValidationError`, `Get_WithoutApiKey_Returns401`; test ręczny POST bez klucza | `401` `application/problem+json`; nic nie zapisane | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
-| AC-04 | `Post_InvalidBatch_Returns400WithFieldErrorsAndStoresNothing` (8 przypadków: pusta lista, brak `deviceId`, pusty `dataItemId`, `sequence 0`, `Condition` bez poziomu, `Sample` z poziomem, duplikat `sequence`, 1 poprawna + 1 błędna), `Post_MoreThanMaxBatchSize_…` (1001), `Post_InvalidObservationField_ErrorKeyPointsToField`, `Post_MalformedJson_…` (zły JSON, zły enum, zła data) + 28 przypadków `ObservationBatchValidatorTests` | `400` z `errors` wskazującym pole (`observations[3].dataItemId`); dla złego JSON `ProblemDetails`; nic nie zapisane | PASS | [Lista testów](#lista-testów) |
+| AC-04 | `Post_InvalidBatch_Returns400WithFieldErrorsAndStoresNothing` (8 przypadków: pusta lista, brak `deviceId`, pusty `dataItemId`, `sequence 0`, `Condition` bez poziomu, `Sample` z poziomem, duplikat `sequence`, 1 poprawna + 1 błędna), `Post_MoreThanMaxBatchSize_…` (1001), `Post_InvalidObservationField_ErrorKeyPointsToField`, `Post_MalformedJson_…` (zły JSON, zły enum, zła data), `Post_NumericEnumValue_Returns400AndStoresNothing` (5 przypadków: `category` 7 / 0 / "7", `conditionLevel` 42 / 1 — review R-01), `Post_NonJsonContentType_Returns415AndStoresNothing` (`text/plain`, brak nagłówka — review R-02, spec: `415`) + 30 przypadków `ObservationBatchValidatorTests` (w tym `Validate_UndefinedCategory_…`, `Validate_UndefinedConditionLevel_…`) | `400` z `errors` wskazującym pole (`observations[3].dataItemId`); dla złego JSON i enumów liczbowych `ProblemDetails`; zły `Content-Type` → `415` `ProblemDetails`; nic nie zapisane | PASS | [Lista testów](#lista-testów), [Poprawki po review](#poprawki-po-review-1-commit-d1d9f5d) |
 | AC-05 | `Post_SameBatchTwice_SecondReportsDuplicatesOnly`, `Post_OverlappingBatch_AcceptsOnlyNewObservations`, `Post_ParallelIdenticalBatches_StoresEachObservationOnce` (4 × 200), `InMemoryObservationStoreTests.AddAsync_*` (w tym 8 równoległych × 500); test ręczny powtórnego POST | `{0, N}`; `{1, 2}`; suma `accepted` = liczba unikalnych; brak duplikatów w GET | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
 | AC-06 | `Get_FilterByDeviceTimeRangeAndLimit_ReturnsSortedPageWithTruncatedFlag`, `Get_InvalidParameters_Returns400WithFieldError` (5 przypadków), `Get_UnknownDevice_Returns200WithEmptyList`, `InMemoryObservationStoreTests.QueryAsync_*`; test ręczny GET bez `deviceId` | Filtr urządzenia i `[from, to)`, sortowanie (`instanceId`, `sequence`), `limit`, `truncated`; błędne parametry `400`; nieznane urządzenie `200` puste | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
 | AC-07 | `HealthAndStartupTests.GetHealth_WithoutApiKey_Returns200Healthy`; test ręczny `/health` | `200`, `Healthy` | PASS | [Lista testów](#lista-testów), [Test ręczny](#test-ręczny-curl) |
@@ -61,7 +61,46 @@ Failed!  - Failed:    61, Passed:    12, Skipped:     0, Total:    73, Duration:
      20 Assert.Equal() Failure: Values differ
 ```
 
+### Poprawki po review 1 (commit d1d9f5d)
+
+Nowe testy przed poprawką R-01 (drzewo robocze: testy dodane, kod jeszcze z `8344188`):
+
+```text
+  Failed DataAcquisition.Api.Tests.ObservationBatchValidatorTests.Validate_UndefinedConditionLevel_ReturnsIndexedFieldError
+  Failed DataAcquisition.Api.Tests.ObservationBatchValidatorTests.Validate_UndefinedCategory_ReturnsIndexedFieldError
+  Failed DataAcquisition.Api.Tests.ObservationsApiTests.Post_NumericEnumValue_Returns400AndStoresNothing(body: "{\"deviceId\":\"VMC5AX\",\"instanceId\":1,\"observations\""···)   (×5)
+Failed!  - Failed:     7, Passed:    75, Skipped:     0, Total:    82, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
+```
+
+(`Post_NonJsonContentType_Returns415AndStoresNothing` przeszedł już przed poprawką — `415` to zachowanie frameworka; R-02 rozwiązane zmianą spec.)
+
+Po poprawce, drzewo = `d1d9f5d`:
+
+```text
+$ dotnet build DataAcquisition.slnx --nologo
+    0 Warning(s)
+    0 Error(s)
+BUILD_EXIT=0
+$ dotnet test DataAcquisition.slnx --nologo --no-build
+Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 92 ms - DataAcquisition.Worker.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    82, Skipped:     0, Total:    82, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
+TEST_EXIT=0
+$ dotnet format DataAcquisition.slnx --verify-no-changes
+FORMAT_EXIT=0
+$ dotnet test … --logger "console;verbosity=normal"   (nowe testy)
+Passed DataAcquisition.Api.Tests.ObservationBatchValidatorTests.Validate_UndefinedConditionLevel_ReturnsIndexedFieldError
+Passed DataAcquisition.Api.Tests.ObservationBatchValidatorTests.Validate_UndefinedCategory_ReturnsIndexedFieldError
+Passed DataAcquisition.Api.Tests.ObservationsApiTests.Post_NumericEnumValue_Returns400AndStoresNothing(body: "{\"deviceId\":\"VMC5AX\",\"instanceId\":1,\"observations\""···)   (×5)
+Passed DataAcquisition.Api.Tests.ObservationsApiTests.Post_NonJsonContentType_Returns415AndStoresNothing(mediaType: "text/plain")
+Passed DataAcquisition.Api.Tests.ObservationsApiTests.Post_NonJsonContentType_Returns415AndStoresNothing(mediaType: null)
+$ dotnet publish Api/DataAcquisition.Api.csproj -c Release -o publish/api --nologo   (komenda z release.md; katalog usunięty po sprawdzeniu)
+  DataAcquisition.Api -> C:\Users\nog_programista2\Projects\DataAcquisition\publish\api\
+PUBLISH_EXIT=0
+```
+
 ### Lista testów
+
+Lista poniżej pochodzi z przebiegu na `40df9fc` (73 testy Api); 9 testów dodanych po review wymieniono w sekcji wyżej.
 
 Wynik `dotnet test DataAcquisition.slnx --nologo --no-build --logger "console;verbosity=normal"`, posortowany, bez czasów. Parametry niektórych przypadków skrócone (`…`) — pełna treść w plikach testów; wartość parametru 31-znakowego klucza zastąpiona placeholderem (hook skanu sekretów).
 

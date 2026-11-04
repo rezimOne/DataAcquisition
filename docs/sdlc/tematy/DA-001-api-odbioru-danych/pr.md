@@ -46,12 +46,13 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-04 11:29. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `ef5d564`**.
+Wygenerowano: 2026-11-04 11:29. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `8344188`**.
 
-Diff do review: `git diff 495a418 ef5d564` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 495a418 8344188` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (11)
+### Commity (12)
 
+- `8344188` DA-001: pr.md - odswiezone dane automatyczne, odstepstwo 6
 - `ef5d564` DA-001: plan.md - odstepstwo 6 (.claude/sdlc.json), lista komend zamiast bloku kodu
 - `19ed643` DA-001: pr.md - opis PR dla recenzenta
 - `507e7be` DA-001: verification.md - dowody dla d728000 (nazwa klucza, appsettings)
