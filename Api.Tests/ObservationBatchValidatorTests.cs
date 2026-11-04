@@ -166,6 +166,24 @@ public sealed class ObservationBatchValidatorTests
     }
 
     [Fact]
+    public void Validate_UnitsAndNativeCodeWithinLimit_ReturnsNoErrors()
+    {
+        var errors = ObservationBatchValidator.Validate(
+            Batch(Sample(1) with { Units = "MILLIMETER" }, Condition(2) with { NativeCode = "AL-0123" }));
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_TooLongUnitsAndNativeCode_ReturnsIndexedFieldErrors()
+    {
+        var errors = ObservationBatchValidator.Validate(
+            Batch(Condition(1) with { Units = new string('u', 65), NativeCode = new string('n', 65) }));
+
+        Assert.Equal(["observations[0].units", "observations[0].nativeCode"], errors.Keys);
+    }
+
+    [Fact]
     public void Validate_TooLongTypeAndSubType_ReturnsIndexedFieldErrors()
     {
         var errors = ObservationBatchValidator.Validate(

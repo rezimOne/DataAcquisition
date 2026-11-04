@@ -38,7 +38,11 @@ public static class ObservationEndpoints
                 o.Type,
                 o.SubType,
                 o.Value!,
-                o.ConditionLevel))
+                o.ConditionLevel)
+            {
+                Units = o.Units,
+                NativeCode = o.NativeCode,
+            })
             .ToList();
 
         var result = await store.AddAsync(observations, cancellationToken);

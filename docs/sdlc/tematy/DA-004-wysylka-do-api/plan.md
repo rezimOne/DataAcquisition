@@ -73,4 +73,5 @@ Wymagania: .NET SDK 10, Python 3.9+ (AC-06). Klucz w testach losowany w czasie w
 ## Zgoda na zakres i odstępstwa
 
 - **Akceptacja planu**: zaakceptowano — nog_programista2, 2026-11-04.
-- **Odstępstwa**: <zmiany planu w trakcie implementacji wraz z uzasadnieniem; aktualizuj w tym samym commicie co kod, którego dotyczą>.
+- **Odstępstwa**:
+  1. **Krok 1 — `Units`/`NativeCode` jako właściwości `init`, nie parametry konstruktora rekordów** (plan: „na końcu listy parametrów”). Wg skilla `csharp-api-design` dodanie parametrów (nawet opcjonalnych) zmienia sygnaturę konstruktora i łamie kompatybilność binarną; właściwości `init` są zgodne źródłowo i binarnie, a `System.Text.Json` deserializuje je razem z parametrami konstruktora. Kolejność: testy z kroku 3 przed krokiem 2 (czerwone 2/86, potem 86/86).

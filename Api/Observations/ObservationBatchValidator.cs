@@ -69,6 +69,8 @@ internal static class ObservationBatchValidator
 
             ValidateOptionalLength(observation.Type, $"{path}.type", MaxIdLength, Add);
             ValidateOptionalLength(observation.SubType, $"{path}.subType", MaxIdLength, Add);
+            ValidateOptionalLength(observation.Units, $"{path}.units", MaxIdLength, Add);
+            ValidateOptionalLength(observation.NativeCode, $"{path}.nativeCode", MaxIdLength, Add);
 
             if (observation.Value is null)
             {
