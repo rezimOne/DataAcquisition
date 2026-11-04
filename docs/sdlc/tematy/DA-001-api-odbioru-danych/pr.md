@@ -1,6 +1,6 @@
 # Pull Request: DA-001 — API odbioru danych z maszyn
 
-Status: draft. Gałąź: topic/DA-001-api-odbioru-danych. Baza: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
+Status: approved. Gałąź: topic/DA-001-api-odbioru-danych. Baza: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
 
 > Cykl statusu: draft → approved. Status approved nadaje wyłącznie człowiek po przeczytaniu `review.md` (hook blokuje agenta). Push gałęzi przepuszcza dopiero `tools/Test-TopicReady.ps1` (hook git pre-push). Merge wykonuje człowiek na zdalnym repozytorium.
 
@@ -39,7 +39,7 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 ## Uwagi dla recenzenta
 
 - **Odstępstwa od planu** (sekcja w `plan.md`): (1) `Api/appsettings*.json` utworzył człowiek — agent ma regułę odmowy odczytu, więc **nie zweryfikował ich treści**; proszę sprawdzić w diffie, że nie ma w nich klucza. (2) `timestamp` bez przesunięcia nie jest odrzucany (STJ przyjmuje czas lokalny serwera) mimo wymogu spec — do decyzji w temacie wysyłki z workera. (3) Commit `Api/` przed `Api.Tests/` (test-first w drzewie roboczym). (4) Klucz testowy losowy zamiast stałej (hook sekretów). (5) Nazwa klucza zmieniona na `DataAcquisition:Api:ApiKey` na prośbę człowieka — zmiana w zatwierdzonym `spec.md`. (7) `AuthenticationHandler` zamiast planowanego endpoint filtra (401 przed bindowaniem body). (8) Poprawki po review 1: `StrictStringEnumConverter` (R-01), spec `415` dla złego `Content-Type` (R-02). Treść `appsettings*.json` (zastrzeżenie z pkt 1) recenzent sprawdził w iteracji 1 — bez sekretów.
-- **`.claude/sdlc.json`** (commit `183930d`): `testCommand` dla bramki `Test-TopicReady` ustawiony przez człowieka; zmiana konfiguracji procesu, nie kodu tematu — odstępstwo 6 w `plan.md`. W tym samym odstępstwie: blok kodu w sekcji *Weryfikacja* planu zamieniony na listę, bo potrójne backticki psuły rozpoznawanie ścieżek w `Test-PlanCovers` (błąd narzędzia — do poprawy przez człowieka w `.claude/hooks/SdlcCommon.ps1`).
+- **`.claude/sdlc.json`** (commit `183930d`): `testCommand` dla bramki `Test-TopicReady` ustawiony przez człowieka; zmiana konfiguracji procesu, nie kodu tematu — odstępstwo 6 w `plan.md`. W tym samym odstępstwie: blok kodu w sekcji _Weryfikacja_ planu zamieniony na listę, bo potrójne backticki psuły rozpoznawanie ścieżek w `Test-PlanCovers` (błąd narzędzia — do poprawy przez człowieka w `.claude/hooks/SdlcCommon.ps1`).
 - Warto spojrzeć na: `ApiKeyAuthenticationHandler` (kolejność względem bindowania, `provided.Count != 1` → brak uwierzytelnienia), `InMemoryObservationStore.AddAsync` (wyścig `TryAdd`/`TryGetValue` — wpływa tylko na log ostrzeżenia, nie na liczniki), sortowanie po `instanceId` (zakłada rosnące `instanceId` przy restartach agenta — w symulatorze to czas uniksowy).
 - `ApiFactory` używa `ConfigureAppConfiguration` + `UseEnvironment("Testing")`, żeby lokalne User Secrets i zmienne środowiskowe dewelopera nie wpływały na testy startu (User Secrets potwierdzone — testy zielone przy ustawionym sekrecie; przesłonięcie zmiennej środowiskowej wynika z kolejności źródeł konfiguracji, nie zostało osobno przetestowane).
 
@@ -48,6 +48,7 @@ W solucji nie było API, więc dane z maszyny CNC (agent MTConnect) nie miały d
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
+
 Wygenerowano: 2026-11-04 11:40. Gałąź: `topic/DA-001-api-odbioru-danych`. Baza: `main` (merge-base `495a418`). **HEAD: `805917d`**.
 
 Diff do review: `git diff 495a418 805917d` — pełna treść w `.claude/sdlc-tmp/DA-001-api-odbioru-danych.diff` (plik lokalny, nieśledzony przez git).
@@ -71,60 +72,61 @@ Diff do review: `git diff 495a418 805917d` — pełna treść w `.claude/sdlc-tm
 
 ### Zmienione pliki
 
-| Zmiana | Plik | W planie? |
-|---|---|---|
-| M | `.claude/sdlc.json` | tak |
-| A | `Api.Tests/ApiFactory.cs` | tak |
-| A | `Api.Tests/DataAcquisition.Api.Tests.csproj` | tak |
-| A | `Api.Tests/HealthAndStartupTests.cs` | tak |
-| A | `Api.Tests/InMemoryObservationStoreTests.cs` | tak |
-| A | `Api.Tests/ObservationBatchValidatorTests.cs` | tak |
-| A | `Api.Tests/ObservationsApiTests.cs` | tak |
-| A | `Api.Tests/TestData.cs` | tak |
-| A | `Api/ApiKey/ApiKeyAuthenticationHandler.cs` | tak |
-| A | `Api/ApiKey/ApiKeyOptions.cs` | tak |
-| A | `Api/ApiKey/ApiKeyServiceCollectionExtensions.cs` | tak |
-| A | `Api/DataAcquisition.Api.csproj` | tak |
-| A | `Api/Observations/IObservationStore.cs` | tak |
-| A | `Api/Observations/InMemoryObservationStore.cs` | tak |
-| A | `Api/Observations/ObservationBatchValidator.cs` | tak |
-| A | `Api/Observations/ObservationEndpoints.cs` | tak |
-| A | `Api/Program.cs` | tak |
-| A | `Api/Properties/launchSettings.json` | tak |
-| A | `Api/appsettings.Development.json` | tak |
-| A | `Api/appsettings.json` | tak |
-| A | `Contracts/ApiContract.cs` | tak |
-| A | `Contracts/ConditionLevel.cs` | tak |
-| A | `Contracts/DataAcquisition.Contracts.csproj` | tak |
-| A | `Contracts/ObservationBatchRequest.cs` | tak |
-| A | `Contracts/ObservationCategory.cs` | tak |
-| A | `Contracts/ObservationResponses.cs` | tak |
-| A | `Contracts/StrictStringEnumConverter.cs` | tak |
-| M | `DataAcquisition.slnx` | tak |
-| M | `docs/sdlc/01-plan/BACKLOG.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/intent.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/plan.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/release.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/spec.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-001-api-odbioru-danych/verification.md` | dokumentacja |
+| Zmiana | Plik                                                         | W planie?    |
+| ------ | ------------------------------------------------------------ | ------------ |
+| M      | `.claude/sdlc.json`                                          | tak          |
+| A      | `Api.Tests/ApiFactory.cs`                                    | tak          |
+| A      | `Api.Tests/DataAcquisition.Api.Tests.csproj`                 | tak          |
+| A      | `Api.Tests/HealthAndStartupTests.cs`                         | tak          |
+| A      | `Api.Tests/InMemoryObservationStoreTests.cs`                 | tak          |
+| A      | `Api.Tests/ObservationBatchValidatorTests.cs`                | tak          |
+| A      | `Api.Tests/ObservationsApiTests.cs`                          | tak          |
+| A      | `Api.Tests/TestData.cs`                                      | tak          |
+| A      | `Api/ApiKey/ApiKeyAuthenticationHandler.cs`                  | tak          |
+| A      | `Api/ApiKey/ApiKeyOptions.cs`                                | tak          |
+| A      | `Api/ApiKey/ApiKeyServiceCollectionExtensions.cs`            | tak          |
+| A      | `Api/DataAcquisition.Api.csproj`                             | tak          |
+| A      | `Api/Observations/IObservationStore.cs`                      | tak          |
+| A      | `Api/Observations/InMemoryObservationStore.cs`               | tak          |
+| A      | `Api/Observations/ObservationBatchValidator.cs`              | tak          |
+| A      | `Api/Observations/ObservationEndpoints.cs`                   | tak          |
+| A      | `Api/Program.cs`                                             | tak          |
+| A      | `Api/Properties/launchSettings.json`                         | tak          |
+| A      | `Api/appsettings.Development.json`                           | tak          |
+| A      | `Api/appsettings.json`                                       | tak          |
+| A      | `Contracts/ApiContract.cs`                                   | tak          |
+| A      | `Contracts/ConditionLevel.cs`                                | tak          |
+| A      | `Contracts/DataAcquisition.Contracts.csproj`                 | tak          |
+| A      | `Contracts/ObservationBatchRequest.cs`                       | tak          |
+| A      | `Contracts/ObservationCategory.cs`                           | tak          |
+| A      | `Contracts/ObservationResponses.cs`                          | tak          |
+| A      | `Contracts/StrictStringEnumConverter.cs`                     | tak          |
+| M      | `DataAcquisition.slnx`                                       | tak          |
+| M      | `docs/sdlc/01-plan/BACKLOG.md`                               | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/intent.md`       | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/plan.md`         | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/release.md`      | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/spec.md`         | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-001-api-odbioru-danych/verification.md` | dokumentacja |
 
 Statystyka: 34 files changed, 1978 insertions(+), 5 deletions(-)
 
 ### Kryteria akceptacji
 
-| AC | Kryterium (intent.md) | Wynik (verification.md) |
-|---|---|---|
-| AC-01 | `dotnet build DataAcquisition.slnx` i `dotnet test DataAcquisition.slnx` kończą się kodem 0; solucja zawiera projekt API, kontraktów i testów API. | PASS |
-| AC-02 | Poprawna paczka obserwacji wysłana z prawidłowym kluczem API jest przyjmowana (2xx), a obserwacje są następnie zwracane przez endpoint odczytu. | PASS |
-| AC-03 | Żądanie zapisu bez klucza API lub z błędnym kluczem jest odrzucane (401) i nic nie zostaje zapisane. | PASS |
-| AC-04 | Paczka niepoprawna (np. pusta, brak `deviceId`/`dataItemId`/`sequence`/`timestamp`, przekroczony limit rozmiaru) jest odrzucana (400) z opisem błędów w formacie `ProblemDetails` i nic z niej nie zostaje zapisane. | PASS |
-| AC-05 | Ponowne wysłanie tych samych obserwacji (ten sam `deviceId` + `instanceId` + `sequence`) nie tworzy duplikatów; odpowiedź informuje, ile obserwacji przyjęto, a ile pominięto jako duplikaty. | PASS |
-| AC-06 | Endpoint odczytu filtruje po `deviceId` i zakresie czasu, zwraca wyniki posortowane po `sequence` i respektuje limit liczby wyników. | PASS |
-| AC-07 | Endpoint health check zwraca 200 bez uwierzytelnienia. | PASS |
-| AC-08 | Klucz API nie jest zapisany w repozytorium ani w logach; aplikacja bez skonfigurowanego klucza nie startuje (walidacja Options przy starcie). | PASS (zastrzeżenie: treści `Api/appsettings*.json` agent nie może odczytać — patrz Pominięcia) |
+| AC    | Kryterium (intent.md)                                                                                                                                                                                                | Wynik (verification.md)                                                                        |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| AC-01 | `dotnet build DataAcquisition.slnx` i `dotnet test DataAcquisition.slnx` kończą się kodem 0; solucja zawiera projekt API, kontraktów i testów API.                                                                   | PASS                                                                                           |
+| AC-02 | Poprawna paczka obserwacji wysłana z prawidłowym kluczem API jest przyjmowana (2xx), a obserwacje są następnie zwracane przez endpoint odczytu.                                                                      | PASS                                                                                           |
+| AC-03 | Żądanie zapisu bez klucza API lub z błędnym kluczem jest odrzucane (401) i nic nie zostaje zapisane.                                                                                                                 | PASS                                                                                           |
+| AC-04 | Paczka niepoprawna (np. pusta, brak `deviceId`/`dataItemId`/`sequence`/`timestamp`, przekroczony limit rozmiaru) jest odrzucana (400) z opisem błędów w formacie `ProblemDetails` i nic z niej nie zostaje zapisane. | PASS                                                                                           |
+| AC-05 | Ponowne wysłanie tych samych obserwacji (ten sam `deviceId` + `instanceId` + `sequence`) nie tworzy duplikatów; odpowiedź informuje, ile obserwacji przyjęto, a ile pominięto jako duplikaty.                        | PASS                                                                                           |
+| AC-06 | Endpoint odczytu filtruje po `deviceId` i zakresie czasu, zwraca wyniki posortowane po `sequence` i respektuje limit liczby wyników.                                                                                 | PASS                                                                                           |
+| AC-07 | Endpoint health check zwraca 200 bez uwierzytelnienia.                                                                                                                                                               | PASS                                                                                           |
+| AC-08 | Klucz API nie jest zapisany w repozytorium ani w logach; aplikacja bez skonfigurowanego klucza nie startuje (walidacja Options przy starcie).                                                                        | PASS (zastrzeżenie: treści `Api/appsettings*.json` agent nie może odczytać — patrz Pominięcia) |
+
 <!-- auto:end -->
 
 ## Decyzja
 
-- **Akceptacja do wypchnięcia**: <osoba, data — approved / changes-requested> — wpisuje człowiek po przeczytaniu `review.md`.
+- **Akceptacja do wypchnięcia**: zaakceptowano — nog_programista2, 2026-11-04
 - **Zdalny PR / merge**: <link lub numer PR na zdalnym repozytorium, data merge — uzupełnia człowiek>.
