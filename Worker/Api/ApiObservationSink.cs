@@ -47,8 +47,10 @@ internal sealed class ApiObservationSink(
 
         switch (response.StatusCode)
         {
-            case HttpStatusCode.BadRequest:
-                // Retrying an invalid batch would block the stream forever, so it is skipped (decision in DA-004 intent).
+            case HttpStatusCode.BadRequest when IsApiProblem(response):
+                // The API rejected this batch: retrying it would block the stream forever, so it is skipped
+                // (decision in DA-004 intent). A 400 without the API's ProblemDetails (proxy, wrong port or
+                // scheme) is not a verdict on the batch and falls through to the retry below (review R-01).
                 var fields = await ReadInvalidFieldsAsync(response, cancellationToken);
                 logger.LogError(
                     "API rejected observations {FirstSequence}-{LastSequence} of {DeviceName} (instance {InstanceId}) as invalid; batch skipped. Invalid fields: {InvalidFields}.",
@@ -68,6 +70,10 @@ internal sealed class ApiObservationSink(
                     $"API returned HTTP {(int)response.StatusCode} for an observation batch.", null, response.StatusCode);
         }
     }
+
+    /// <summary>The data acquisition API answers every 400 with ProblemDetails (application/problem+json).</summary>
+    private static bool IsApiProblem(HttpResponseMessage response) =>
+        string.Equals(response.Content.Headers.ContentType?.MediaType, "application/problem+json", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Field paths from ValidationProblemDetails.errors (names only, never values).</summary>
     private static async Task<string> ReadInvalidFieldsAsync(HttpResponseMessage response, CancellationToken cancellationToken)

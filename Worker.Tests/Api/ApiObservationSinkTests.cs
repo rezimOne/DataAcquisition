@@ -13,6 +13,7 @@ namespace DataAcquisition.Worker.Tests.Api;
 public sealed class ApiObservationSinkTests
 {
     private const string SecretValue = "SPINDLE OVERLOAD";
+    private const string ProblemJson = "application/problem+json";
 
     /// <summary>Random per test run, so no key literal lives in the repository.</summary>
     private static readonly string ApiKey = $"{Guid.NewGuid():N}{Guid.NewGuid():N}";
@@ -114,7 +115,7 @@ public sealed class ApiObservationSinkTests
     public async Task ReceiveAsync_ValidationProblem_LogsFieldNamesWithoutValuesAndSkipsBatch()
     {
         const string problem = """{"title":"One or more validation errors occurred.","status":400,"errors":{"observations[1].value":["value must be at most 1024 characters long."]}}""";
-        var (sink, logs) = CreateSink(StubHandler.Returning(HttpStatusCode.BadRequest, problem));
+        var (sink, logs) = CreateSink(StubHandler.Returning(HttpStatusCode.BadRequest, problem, ProblemJson));
 
         var exception = await Record.ExceptionAsync(() => sink.ReceiveAsync(Batch, Ct));
 
@@ -126,14 +127,31 @@ public sealed class ApiObservationSinkTests
     }
 
     [Fact]
-    public async Task ReceiveAsync_BadRequestWithoutProblemDetails_LogsAndSkipsBatch()
+    public async Task ReceiveAsync_ApiProblemWithoutFieldErrors_LogsAndSkipsBatch()
     {
-        var (sink, logs) = CreateSink(StubHandler.Returning(HttpStatusCode.BadRequest, "not json"));
+        // e.g. malformed JSON rejected by the API itself: still the API's verdict on this batch.
+        const string problem = """{"title":"Bad Request","status":400}""";
+        var (sink, logs) = CreateSink(StubHandler.Returning(HttpStatusCode.BadRequest, problem, ProblemJson));
 
         var exception = await Record.ExceptionAsync(() => sink.ReceiveAsync(Batch, Ct));
 
         Assert.Null(exception);
         Assert.Single(logs.GetSnapshot(), r => r.Level == LogLevel.Error);
+    }
+
+    [Theory]
+    [InlineData("The plain HTTP request was sent to HTTPS port", "text/html")]
+    [InlineData("""{"error":"bad request"}""", "application/json")]
+    public async Task ReceiveAsync_BadRequestNotFromApi_ThrowsSoBatchIsRetried(string body, string mediaType)
+    {
+        // Review R-01: a 400 without the API's ProblemDetails (proxy, wrong port/scheme) is not a verdict on
+        // the batch; skipping it would silently drop every batch, so it is retried like other 4xx.
+        var (sink, logs) = CreateSink(StubHandler.Returning(HttpStatusCode.BadRequest, body, mediaType));
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() => sink.ReceiveAsync(Batch, Ct));
+
+        Assert.Equal(HttpStatusCode.BadRequest, error.StatusCode);
+        Assert.DoesNotContain(logs.GetSnapshot(), r => r.Level >= LogLevel.Error);
     }
 
     [Theory]
@@ -184,8 +202,8 @@ public sealed class ApiObservationSinkTests
     {
         public List<CapturedRequest> Requests { get; } = [];
 
-        public static StubHandler Returning(HttpStatusCode status, string body) =>
-            new(_ => Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body) }));
+        public static StubHandler Returning(HttpStatusCode status, string body, string mediaType = "text/plain") =>
+            new(_ => Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, null, mediaType) }));
 
         public static StubHandler Throwing(Exception exception) =>
             new(_ => Task.FromException<HttpResponseMessage>(exception));

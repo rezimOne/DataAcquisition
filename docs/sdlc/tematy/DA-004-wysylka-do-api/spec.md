@@ -11,8 +11,9 @@ Dla każdej paczki `ObservationBatch` (jedno urządzenie, jedna instancja agenta
 | Odpowiedź API | Zachowanie odbiorcy | Skutek w synchronizatorze (DA-002) |
 |---|---|---|
 | `200` z `{accepted, duplicates}` | Log `Information`: urządzenie, `instanceId`, źródło, zakres `sequence`, `accepted`, `duplicates`; zwraca się normalnie | Paczka dostarczona, `nextSequence` przesunięty |
-| `400` (`ValidationProblemDetails` lub `ProblemDetails`) | Log `Error`: urządzenie, zakres `sequence`, **nazwy pól** z błędami (np. `observations[3].value`) — bez wartości obserwacji; zwraca się normalnie (**paczka pominięta**, decyzja PO) | Paczka traktowana jako dostarczona — strumień nie blokuje się |
+| `400` z ProblemDetails API (`Content-Type: application/problem+json` — `ValidationProblemDetails` lub `ProblemDetails`) | Log `Error`: urządzenie, zakres `sequence`, **nazwy pól** z błędami (np. `observations[3].value`) — bez wartości obserwacji; zwraca się normalnie (**paczka pominięta**, decyzja PO) | Paczka traktowana jako dostarczona — strumień nie blokuje się |
 | `401` / `403` | Log `Error` „API rejected the API key” (bez wartości klucza); rzuca wyjątek | Błąd przejściowy: `Warning` + ponowienie tej samej paczki z backoffem 1 s → 30 s (decyzja PO) |
+| `400` **bez** ProblemDetails API (np. proxy: „plain HTTP request was sent to HTTPS port”) — po review R-01, decyzja PO | Rzuca wyjątek (to nie werdykt API o paczce) | Błąd przejściowy: ponowienie tej samej paczki |
 | `5xx`, inne `4xx` (np. `404` zły adres, `415`, `429`), brak połączenia, `RequestTimeout` | Rzuca wyjątek (bez dodatkowego logu — loguje synchronizator) | Błąd przejściowy: ponowienie tej samej paczki |
 | Anulowanie przy zatrzymaniu hosta | Przepuszcza `OperationCanceledException` | Pętla kończy się bez wyjątku (DA-003) |
 
