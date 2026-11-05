@@ -5,7 +5,10 @@ namespace DataAcquisition.Worker.MTConnect;
 
 public static class MTConnectServiceCollectionExtensions
 {
-    /// <summary>Registers the MTConnect agent client, synchronizer and the default (logging) sink.</summary>
+    /// <summary>
+    /// Registers the MTConnect agent client and synchronizer. The observation sink is registered separately
+    /// (AddDataAcquisitionApi in the worker; a test double in tests).
+    /// </summary>
     public static IServiceCollection AddMTConnect(this IServiceCollection services)
     {
         services.AddOptions<MTConnectOptions>()
@@ -26,7 +29,6 @@ public static class MTConnectServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IMTConnectAgent, MTConnectClient>();
-        services.TryAddSingleton<IObservationSink, LoggingObservationSink>();
         services.AddSingleton<MTConnectSynchronizer>();
 
         return services;

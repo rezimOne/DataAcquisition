@@ -1,6 +1,6 @@
 # Intent: DA-003 — Porzadki po slopwatch (SW003, SW004)
 
-ID: DA-003. Status: ready. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 85b87a3.
+ID: DA-003. Status: verified. Data: 2026-11-04. Odpowiedzialny: nog_programista2. Baza: 85b87a3.
 
 ## Problem i dowód
 

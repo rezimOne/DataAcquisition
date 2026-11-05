@@ -28,6 +28,31 @@ public sealed class ObservationsApiTests : IAsyncDisposable
     // AC-02
 
     [Fact]
+    public async Task Post_WithUnitsAndNativeCode_StoresAndReturnsThem()
+    {
+        var batch = Batch(Sample(1) with { Units = "MILLIMETER" }, Condition(2) with { NativeCode = "AL-0123" });
+
+        var post = await _client.PostAsJsonAsync(ApiContract.ObservationsPath, batch, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+        var items = (await QueryAsync($"?deviceId={DeviceId}")).Items;
+        Assert.Equal([("MILLIMETER", (string?)null), (null, "AL-0123")], items.Select(i => (i.Units, i.NativeCode)));
+    }
+
+    [Fact]
+    public async Task Post_PayloadWithoutUnitsAndNativeCode_IsAcceptedWithNulls()
+    {
+        // Payload in the DA-001 format (no units / nativeCode properties at all).
+        const string body = """{"deviceId":"VMC5AX","instanceId":1,"observations":[{"dataItemId":"xpos","sequence":1,"timestamp":"2026-11-04T10:15:30Z","category":"Sample","value":"1"}]}""";
+
+        var post = await _client.PostAsync(ApiContract.ObservationsPath, JsonContent(body), Ct);
+
+        Assert.Equal(HttpStatusCode.OK, post.StatusCode);
+        var item = Assert.Single((await QueryAsync($"?deviceId={DeviceId}")).Items);
+        Assert.Equal(((string?)null, (string?)null), (item.Units, item.NativeCode));
+    }
+
+    [Fact]
     public async Task Post_ValidBatchWithSampleAndCondition_AcceptsAndReturnsFromQuery()
     {
         var sample = Sample(1201) with { Timestamp = new DateTimeOffset(2026, 11, 4, 12, 15, 30, 120, TimeSpan.FromHours(2)) };

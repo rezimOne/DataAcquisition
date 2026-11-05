@@ -18,4 +18,14 @@ public sealed record ObservationDto(
     string? Type,
     string? SubType,
     string? Value,
-    ConditionLevel? ConditionLevel);
+    ConditionLevel? ConditionLevel)
+{
+    // Added after the first release as init properties (not constructor parameters), so existing callers
+    // stay source- and binary-compatible and older payloads without these fields remain valid.
+
+    /// <summary>Units from the device model (MTConnect /probe), e.g. MILLIMETER. Optional.</summary>
+    public string? Units { get; init; }
+
+    /// <summary>Native alarm code of a CONDITION observation, e.g. AL-0123. Optional.</summary>
+    public string? NativeCode { get; init; }
+}
