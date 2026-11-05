@@ -45,12 +45,13 @@ Domyka przepływ symulator → worker → API: worker zamiast logować paczki (D
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-05 08:49. Gałąź: `topic/DA-004-wysylka-do-api`. Baza: `main` (merge-base `751df55`). **HEAD: `41c97cf`**.
+Wygenerowano: 2026-11-05 08:49. Gałąź: `topic/DA-004-wysylka-do-api`. Baza: `main` (merge-base `751df55`). **HEAD: `6343c3d`**.
 
-Diff do review: `git diff 751df55 41c97cf` — pełna treść w `.claude/sdlc-tmp/DA-004-wysylka-do-api.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 751df55 6343c3d` — pełna treść w `.claude/sdlc-tmp/DA-004-wysylka-do-api.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (10)
+### Commity (11)
 
+- `6343c3d` DA-004: pr.md - dane automatyczne
 - `41c97cf` DA-004: verification.md i pr.md po R-01; review iteracja 1
 - `3f1e456` DA-004: R-01 pomijanie paczki tylko przy 400 z ProblemDetails API
 - `3d986d5` DA-004: pr.md - opis PR dla recenzenta
