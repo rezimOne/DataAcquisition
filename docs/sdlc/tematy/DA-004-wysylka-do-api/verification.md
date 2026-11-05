@@ -1,6 +1,6 @@
 # Weryfikacja: DA-004
 
-Status: verified. Commit: df35353. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, runtime 10.0.12, slopwatch 0.4.2 (baseline pusty, `--fail-on warning`), Python 3.14.7 (symulator `--seed 42`). Klucz API w testach automatycznych losowany w czasie wykonania; w teście ręcznym losowy (`daq-api-` + `secrets.token_hex(24)`), przekazany tylko zmiennymi środowiskowymi. Data: 2026-11-05.
+Status: verified. Commit: 3f1e456. Środowisko: Windows 11 Pro, .NET SDK 10.0.401, runtime 10.0.12, slopwatch 0.4.2 (baseline pusty, `--fail-on warning`), Python 3.14.7 (symulator `--seed 42`). Klucz API w testach automatycznych losowany w czasie wykonania; w teście ręcznym losowy (`daq-api-` + `secrets.token_hex(24)`), przekazany tylko zmiennymi środowiskowymi. Data: 2026-11-05.
 
 ## Wyniki testów vs Kryteria Odbioru
 
@@ -9,7 +9,7 @@ Status: verified. Commit: df35353. Środowisko: Windows 11 Pro, .NET SDK 10.0.40
 | AC-01 | `dotnet build`, `dotnet test --nologo`, `dotnet format --verify-no-changes`, `dotnet tool run slopwatch analyze --fail-on warning` | Kod 0, slopwatch 0 znalezisk | PASS | [Build, testy, format, slopwatch](#build-testy-format-slopwatch) |
 | AC-02 | `ApiObservationSinkTests.ReceiveAsync_Accepted_PostsContractJsonWithApiKeyAndLogsResult`, `…BaseUrlWithPath_KeepsPath`, `ObservationBatchMappingTests` (8), `WorkerToApiTests.Sink_SendsBatch_ApiReturnsSameObservationsWithUnitsAndNativeCode`, `Api.Tests` (`Post_WithUnitsAndNativeCode_…`, `Post_PayloadWithoutUnitsAndNativeCode_…`, walidacja długości); test ręczny | Żądanie zgodne z kontraktem i kluczem; dane w API 1:1 z `units`/`nativeCode`; stare paczki nadal przyjmowane | PASS | [Lista testów](#nowe-testy), [Test ręczny](#test-ręczny-ac-06) |
 | AC-03 | `…TransientStatus_ThrowsSoBatchIsRetried` (500, 503, 404, 429), `…ConnectionFailure_Throws`, `…ApiDoesNotAnswer_TimesOutAfterRequestTimeout`, `WorkerToApiTests.Synchronizer_ApiUnavailableForTwoRequests_RetriesAndStoresEveryObservationOnce`; test ręczny z restartem API | Wyjątek → ponowienie tej samej paczki z backoffem (1 s, 2 s); po powrocie API komplet bez duplikatów | PASS | [Lista testów](#nowe-testy), [Test ręczny](#test-ręczny-ac-06) |
-| AC-04 | `…ValidationProblem_LogsFieldNamesWithoutValuesAndSkipsBatch`, `…BadRequestWithoutProblemDetails_LogsAndSkipsBatch`, `…ApiKeyRejected_LogsErrorAndThrowsSoBatchIsRetried` (401, 403) | 400: `Error` z nazwami pól, bez wartości, bez wyjątku; 401/403: `Error` + wyjątek; brak klucza i wartości w logach | PASS | [Lista testów](#nowe-testy) |
+| AC-04 | `…ValidationProblem_LogsFieldNamesWithoutValuesAndSkipsBatch`, `…ApiProblemWithoutFieldErrors_LogsAndSkipsBatch`, `…BadRequestNotFromApi_ThrowsSoBatchIsRetried` (2), `…ApiKeyRejected_LogsErrorAndThrowsSoBatchIsRetried` (401, 403) | 400 z ProblemDetails API: `Error` z nazwami pól, bez wartości, bez wyjątku; 400 spoza API: wyjątek (ponowienie), bez `Error`; 401/403: `Error` + wyjątek; brak klucza i wartości w logach | PASS (po poprawce R-01) | [Lista testów](#nowe-testy), [Po review 1](#po-review-1-r-01) |
 | AC-05 | `WorkerTests.StartAsync_InvalidApiConfiguration_FailsWithConfigurationKeyWithoutValue` (6), `Options_ApiWithKeyOnly_UsesLocalApiDefaults`, `Services_DefaultRegistration_UsesApiSinkAndHttpAgent`; `grep` klucza w logach procesów (test ręczny) | `OptionsValidationException` z pełnym kluczem, bez wartości; klucz nieobecny w logach | PASS | [Lista testów](#nowe-testy), [Test ręczny](#test-ręczny-ac-06) |
 | AC-06 | Symulator + API + worker 150 s; API zatrzymane po 60 s na 20 s i uruchomione ponownie; odczyt wszystkich obserwacji z API oknami 2 s; porównanie z logiem workera | Liczba obserwacji w API = suma `accepted` po restarcie API; brak luk i duplikatów | PASS | [Test ręczny](#test-ręczny-ac-06) |
 
@@ -131,6 +131,37 @@ warn | MTConnect agent http://localhost:5000/ cycle failed (HttpRequestException
 ```
 
 Wnioski: suma `accepted` po restarcie API (8887) = liczba obserwacji w API (8887), ten sam zakres 6168–15054, 0 luk, 0 duplikatów. Paczka odrzucona w trakcie przerwy (od 6168) została ponowiona, potem worker nadrobił zaległości paczkami po 1000 (doganianie). Przed przerwą 5807 = migawka 27 + sekwencje 388–6167 (5780). Dane sprzed restartu API przepadły razem z procesem API (store w pamięci — ryzyko opisane w spec).
+
+### Po review 1 (R-01)
+
+Testy zmienione przed poprawką odbiorcy (drzewo robocze, kod z `3d986d5`):
+
+```text
+  Failed DataAcquisition.Worker.Tests.Api.ApiObservationSinkTests.ReceiveAsync_BadRequestNotFromApi_ThrowsSoBatchIsRetried(body: "{\"error\":\"bad request\"}", mediaType: "application/json")
+  Failed DataAcquisition.Worker.Tests.Api.ApiObservationSinkTests.ReceiveAsync_BadRequestNotFromApi_ThrowsSoBatchIsRetried(body: "The plain HTTP request was sent to HTTPS port", mediaType: "text/html")
+Failed!  - Failed:     2, Passed:    82, Skipped:     0, Total:    84, Duration: 1 s - DataAcquisition.Worker.Tests.dll (net10.0)
+```
+
+Po poprawce, drzewo = `3f1e456`:
+
+```text
+$ dotnet build DataAcquisition.slnx --nologo
+    0 Warning(s)
+    0 Error(s)
+BUILD_EXIT=0
+$ dotnet test DataAcquisition.slnx --nologo --no-build
+Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 677 ms - DataAcquisition.Integration.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    84, Skipped:     0, Total:    84, Duration: 1 s - DataAcquisition.Worker.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    86, Skipped:     0, Total:    86, Duration: 1 s - DataAcquisition.Api.Tests.dll (net10.0)
+TEST_EXIT=0
+$ dotnet format DataAcquisition.slnx --verify-no-changes
+FORMAT_EXIT=0
+$ dotnet tool run slopwatch analyze --fail-on warning
+Scan complete: 0 issue(s) found
+SLOPWATCH_EXIT=0
+```
+
+Że prawdziwe API odpowiada na każde `400` typem `application/problem+json`, potwierdzają istniejące testy `Api.Tests` (`AssertProblemAsync` w `Post_InvalidBatch_…`, `Post_MalformedJson_…`, `Post_NumericEnumValue_…`). Test ręczny AC-06 (na `df35353`) nie jest powtarzany — zmiana dotyczy wyłącznie ścieżki `400`, która w nim nie występuje.
 
 ## Pominięcia i ograniczenia
 
