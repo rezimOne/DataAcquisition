@@ -45,12 +45,14 @@ Domyka przepływ symulator → worker → API: worker zamiast logować paczki (D
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
-Wygenerowano: 2026-11-05 08:44. Gałąź: `topic/DA-004-wysylka-do-api`. Baza: `main` (merge-base `751df55`). **HEAD: `3d986d5`**.
+Wygenerowano: 2026-11-05 08:49. Gałąź: `topic/DA-004-wysylka-do-api`. Baza: `main` (merge-base `751df55`). **HEAD: `41c97cf`**.
 
-Diff do review: `git diff 751df55 3d986d5` — pełna treść w `.claude/sdlc-tmp/DA-004-wysylka-do-api.diff` (plik lokalny, nieśledzony przez git).
+Diff do review: `git diff 751df55 41c97cf` — pełna treść w `.claude/sdlc-tmp/DA-004-wysylka-do-api.diff` (plik lokalny, nieśledzony przez git).
 
-### Commity (8)
+### Commity (10)
 
+- `41c97cf` DA-004: verification.md i pr.md po R-01; review iteracja 1
+- `3f1e456` DA-004: R-01 pomijanie paczki tylko przy 400 z ProblemDetails API
 - `3d986d5` DA-004: pr.md - opis PR dla recenzenta
 - `58205e7` DA-004: verification.md (AC-01..AC-06 dla df35353), release.md
 - `df35353` DA-004: testy end-to-end Integration.Tests (worker -> API), projekt w solucji
@@ -92,7 +94,7 @@ Diff do review: `git diff 751df55 3d986d5` — pełna treść w `.claude/sdlc-tm
 | A | `docs/sdlc/tematy/DA-004-wysylka-do-api/spec.md` | dokumentacja |
 | A | `docs/sdlc/tematy/DA-004-wysylka-do-api/verification.md` | dokumentacja |
 
-Statystyka: 27 files changed, 1252 insertions(+), 23 deletions(-)
+Statystyka: 27 files changed, 1309 insertions(+), 23 deletions(-)
 
 ### Kryteria akceptacji
 
@@ -101,7 +103,7 @@ Statystyka: 27 files changed, 1252 insertions(+), 23 deletions(-)
 | AC-01 | `dotnet build`, `dotnet test DataAcquisition.slnx --nologo`, `dotnet format --verify-no-changes` i `dotnet tool run slopwatch analyze --fail-on warning` kończą się kodem 0. | PASS |
 | AC-02 | Paczka z workera jest wysyłana do API z nagłówkiem `X-Api-Key`; pola obserwacji (urządzenie, `instanceId`, `dataItemId`, `sequence`, czas UTC, kategoria, `type`, `subType`, wartość, poziom CONDITION) są zmapowane 1:1 na kontrakt; po wysyłce obserwacje są zwracane przez `GET /api/v1/observations`. | PASS |
 | AC-03 | API niedostępne, timeout lub HTTP 5xx → odbiorca zgłasza niepowodzenie, synchronizator ponawia tę samą paczkę z rosnącym opóźnieniem, po powrocie API paczka jest dostarczona; brak utraty i duplikatów w API. | PASS |
-| AC-04 | Błędy trwałe (np. 400 — niepoprawna paczka, 401 — zły klucz) są obsłużone zgodnie z decyzją PO (niżej), z logiem na poziomie `Error`, bez wartości obserwacji i bez klucza. | PASS |
+| AC-04 | Błędy trwałe (np. 400 — niepoprawna paczka, 401 — zły klucz) są obsłużone zgodnie z decyzją PO (niżej), z logiem na poziomie `Error`, bez wartości obserwacji i bez klucza. | PASS (po poprawce R-01) |
 | AC-05 | Konfiguracja `DataAcquisition:Api:*` ładowana przez Options z walidacją przy starcie (brak/za krótki klucz, zły adres → start przerwany z pełnym kluczem w komunikacie); klucz nie pojawia się w logach. | PASS |
 | AC-06 | Test ręczny ≥ 2 min (symulator + API + worker): liczba obserwacji zwróconych przez API dla urządzenia = liczba unikalnych obserwacji przekazanych przez worker; zatrzymanie i ponowne uruchomienie API w trakcie nie powoduje luki. | PASS |
 <!-- auto:end -->
