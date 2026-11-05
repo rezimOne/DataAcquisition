@@ -1,6 +1,6 @@
 # Pull Request: DA-004 — Wysylka obserwacji z workera do API
 
-Status: draft. Gałąź: topic/DA-004-wysylka-do-api. Gałąź bazowa: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
+Status: approved. Gałąź: topic/DA-004-wysylka-do-api. Gałąź bazowa: main. Autor: nog_programista2. Źródła: [intent](intent.md), [plan](plan.md), [verification](verification.md), [review](review.md).
 
 > Cykl statusu: draft → approved. Status approved nadaje wyłącznie człowiek po przeczytaniu `review.md` (hook blokuje agenta) — w tym samym commicie ustawia `Status: done` w `plan.md`. Push gałęzi przepuszcza dopiero `tools/Test-TopicReady.ps1` (hook git pre-push). Merge wykonuje człowiek na zdalnym repozytorium.
 
@@ -45,6 +45,7 @@ Domyka przepływ symulator → worker → API: worker zamiast logować paczki (D
 Sekcję generuje `tools/New-PullRequest.ps1` — nie edytuj ręcznie.
 
 <!-- auto:start -->
+
 Wygenerowano: 2026-11-05 08:49. Gałąź: `topic/DA-004-wysylka-do-api`. Baza: `main` (merge-base `751df55`). **HEAD: `6343c3d`**.
 
 Diff do review: `git diff 751df55 6343c3d` — pełna treść w `.claude/sdlc-tmp/DA-004-wysylka-do-api.diff` (plik lokalny, nieśledzony przez git).
@@ -65,51 +66,52 @@ Diff do review: `git diff 751df55 6343c3d` — pełna treść w `.claude/sdlc-tm
 
 ### Zmienione pliki
 
-| Zmiana | Plik | W planie? |
-|---|---|---|
-| M | `Api.Tests/ObservationBatchValidatorTests.cs` | tak |
-| M | `Api.Tests/ObservationsApiTests.cs` | tak |
-| M | `Api/Observations/ObservationBatchValidator.cs` | tak |
-| M | `Api/Observations/ObservationEndpoints.cs` | tak |
-| M | `Contracts/ObservationBatchRequest.cs` | tak |
-| M | `Contracts/ObservationResponses.cs` | tak |
-| M | `DataAcquisition.slnx` | tak |
-| A | `Integration.Tests/DataAcquisition.Integration.Tests.csproj` | tak |
-| A | `Integration.Tests/WorkerToApiTests.cs` | tak |
-| A | `Worker.Tests/Api/ApiObservationSinkTests.cs` | tak |
-| A | `Worker.Tests/Api/ObservationBatchMappingTests.cs` | tak |
-| M | `Worker.Tests/WorkerTests.cs` | tak |
-| A | `Worker/Api/ApiObservationSink.cs` | tak |
-| A | `Worker/Api/ApiOptions.cs` | tak |
-| A | `Worker/Api/ApiServiceCollectionExtensions.cs` | tak |
-| A | `Worker/Api/ObservationBatchMapping.cs` | tak |
-| M | `Worker/DataAcquisition.Worker.csproj` | tak |
-| M | `Worker/MTConnect/MTConnectServiceCollectionExtensions.cs` | tak |
-| M | `Worker/MTConnect/ObservationSinks.cs` | tak |
-| M | `Worker/Program.cs` | tak |
-| M | `docs/sdlc/01-plan/BACKLOG.md` | dokumentacja |
-| M | `docs/sdlc/tematy/DA-003-porzadki-slopwatch/intent.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-004-wysylka-do-api/intent.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-004-wysylka-do-api/plan.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-004-wysylka-do-api/release.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-004-wysylka-do-api/spec.md` | dokumentacja |
-| A | `docs/sdlc/tematy/DA-004-wysylka-do-api/verification.md` | dokumentacja |
+| Zmiana | Plik                                                         | W planie?    |
+| ------ | ------------------------------------------------------------ | ------------ |
+| M      | `Api.Tests/ObservationBatchValidatorTests.cs`                | tak          |
+| M      | `Api.Tests/ObservationsApiTests.cs`                          | tak          |
+| M      | `Api/Observations/ObservationBatchValidator.cs`              | tak          |
+| M      | `Api/Observations/ObservationEndpoints.cs`                   | tak          |
+| M      | `Contracts/ObservationBatchRequest.cs`                       | tak          |
+| M      | `Contracts/ObservationResponses.cs`                          | tak          |
+| M      | `DataAcquisition.slnx`                                       | tak          |
+| A      | `Integration.Tests/DataAcquisition.Integration.Tests.csproj` | tak          |
+| A      | `Integration.Tests/WorkerToApiTests.cs`                      | tak          |
+| A      | `Worker.Tests/Api/ApiObservationSinkTests.cs`                | tak          |
+| A      | `Worker.Tests/Api/ObservationBatchMappingTests.cs`           | tak          |
+| M      | `Worker.Tests/WorkerTests.cs`                                | tak          |
+| A      | `Worker/Api/ApiObservationSink.cs`                           | tak          |
+| A      | `Worker/Api/ApiOptions.cs`                                   | tak          |
+| A      | `Worker/Api/ApiServiceCollectionExtensions.cs`               | tak          |
+| A      | `Worker/Api/ObservationBatchMapping.cs`                      | tak          |
+| M      | `Worker/DataAcquisition.Worker.csproj`                       | tak          |
+| M      | `Worker/MTConnect/MTConnectServiceCollectionExtensions.cs`   | tak          |
+| M      | `Worker/MTConnect/ObservationSinks.cs`                       | tak          |
+| M      | `Worker/Program.cs`                                          | tak          |
+| M      | `docs/sdlc/01-plan/BACKLOG.md`                               | dokumentacja |
+| M      | `docs/sdlc/tematy/DA-003-porzadki-slopwatch/intent.md`       | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-004-wysylka-do-api/intent.md`           | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-004-wysylka-do-api/plan.md`             | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-004-wysylka-do-api/release.md`          | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-004-wysylka-do-api/spec.md`             | dokumentacja |
+| A      | `docs/sdlc/tematy/DA-004-wysylka-do-api/verification.md`     | dokumentacja |
 
 Statystyka: 27 files changed, 1309 insertions(+), 23 deletions(-)
 
 ### Kryteria akceptacji
 
-| AC | Kryterium (intent.md) | Wynik (verification.md) |
-|---|---|---|
-| AC-01 | `dotnet build`, `dotnet test DataAcquisition.slnx --nologo`, `dotnet format --verify-no-changes` i `dotnet tool run slopwatch analyze --fail-on warning` kończą się kodem 0. | PASS |
-| AC-02 | Paczka z workera jest wysyłana do API z nagłówkiem `X-Api-Key`; pola obserwacji (urządzenie, `instanceId`, `dataItemId`, `sequence`, czas UTC, kategoria, `type`, `subType`, wartość, poziom CONDITION) są zmapowane 1:1 na kontrakt; po wysyłce obserwacje są zwracane przez `GET /api/v1/observations`. | PASS |
-| AC-03 | API niedostępne, timeout lub HTTP 5xx → odbiorca zgłasza niepowodzenie, synchronizator ponawia tę samą paczkę z rosnącym opóźnieniem, po powrocie API paczka jest dostarczona; brak utraty i duplikatów w API. | PASS |
-| AC-04 | Błędy trwałe (np. 400 — niepoprawna paczka, 401 — zły klucz) są obsłużone zgodnie z decyzją PO (niżej), z logiem na poziomie `Error`, bez wartości obserwacji i bez klucza. | PASS (po poprawce R-01) |
-| AC-05 | Konfiguracja `DataAcquisition:Api:*` ładowana przez Options z walidacją przy starcie (brak/za krótki klucz, zły adres → start przerwany z pełnym kluczem w komunikacie); klucz nie pojawia się w logach. | PASS |
-| AC-06 | Test ręczny ≥ 2 min (symulator + API + worker): liczba obserwacji zwróconych przez API dla urządzenia = liczba unikalnych obserwacji przekazanych przez worker; zatrzymanie i ponowne uruchomienie API w trakcie nie powoduje luki. | PASS |
+| AC    | Kryterium (intent.md)                                                                                                                                                                                                                                                                                     | Wynik (verification.md) |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| AC-01 | `dotnet build`, `dotnet test DataAcquisition.slnx --nologo`, `dotnet format --verify-no-changes` i `dotnet tool run slopwatch analyze --fail-on warning` kończą się kodem 0.                                                                                                                              | PASS                    |
+| AC-02 | Paczka z workera jest wysyłana do API z nagłówkiem `X-Api-Key`; pola obserwacji (urządzenie, `instanceId`, `dataItemId`, `sequence`, czas UTC, kategoria, `type`, `subType`, wartość, poziom CONDITION) są zmapowane 1:1 na kontrakt; po wysyłce obserwacje są zwracane przez `GET /api/v1/observations`. | PASS                    |
+| AC-03 | API niedostępne, timeout lub HTTP 5xx → odbiorca zgłasza niepowodzenie, synchronizator ponawia tę samą paczkę z rosnącym opóźnieniem, po powrocie API paczka jest dostarczona; brak utraty i duplikatów w API.                                                                                            | PASS                    |
+| AC-04 | Błędy trwałe (np. 400 — niepoprawna paczka, 401 — zły klucz) są obsłużone zgodnie z decyzją PO (niżej), z logiem na poziomie `Error`, bez wartości obserwacji i bez klucza.                                                                                                                               | PASS (po poprawce R-01) |
+| AC-05 | Konfiguracja `DataAcquisition:Api:*` ładowana przez Options z walidacją przy starcie (brak/za krótki klucz, zły adres → start przerwany z pełnym kluczem w komunikacie); klucz nie pojawia się w logach.                                                                                                  | PASS                    |
+| AC-06 | Test ręczny ≥ 2 min (symulator + API + worker): liczba obserwacji zwróconych przez API dla urządzenia = liczba unikalnych obserwacji przekazanych przez worker; zatrzymanie i ponowne uruchomienie API w trakcie nie powoduje luki.                                                                       | PASS                    |
+
 <!-- auto:end -->
 
 ## Decyzja
 
-- **Akceptacja do wypchnięcia**: <osoba, data — approved / changes-requested> — wpisuje człowiek po przeczytaniu `review.md`; razem z nią `plan.md` → `Status: done` (plan przestaje autoryzować edycję plików), a temat w `intent.md` / `BACKLOG.md` → `verified`.
+- **Akceptacja do wypchnięcia**: zaakceptowano — nog_programista2, 2026-11-04 — wpisuje człowiek po przeczytaniu `review.md`; razem z nią `plan.md` → `Status: done` (plan przestaje autoryzować edycję plików), a temat w `intent.md` / `BACKLOG.md` → `verified`.
 - **Zdalny PR / merge**: <link lub numer PR na zdalnym repozytorium, data merge — uzupełnia człowiek>.
