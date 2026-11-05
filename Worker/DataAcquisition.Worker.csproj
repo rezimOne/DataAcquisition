@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Contracts\DataAcquisition.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="DataAcquisition.Worker.Tests" />
+    <InternalsVisibleTo Include="DataAcquisition.Integration.Tests" />
   </ItemGroup>
 </Project>
